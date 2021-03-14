@@ -6,8 +6,8 @@ fmt:
 clean:
 	@rm -rf glox
 
-build:clean
-	@go build main.go
+build: clean
+	@go build -o glox main.go
 
 run: build
 	@./glox

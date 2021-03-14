@@ -1,7 +1,7 @@
 package lib
 
-type OpCode int
-
-var (
-	OpReturn OpCode = 0
+const (
+	// Load the constant for use
+	OpReturn byte = iota
+	OpConstant
 )
