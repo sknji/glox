@@ -1,6 +1,8 @@
-package lib
+package stack
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const DebugTraceExecution = true
 
@@ -34,7 +36,7 @@ func (c *Chunk) disassembleInstruction(offset int) int {
 		return c.simpleInstruction("OP_ADD", offset)
 	case OpSubtract:
 		return c.simpleInstruction("OP_SUBTRACT", offset)
-	case OpMutliply:
+	case OpMultiply:
 		return c.simpleInstruction("OP_MULTIPLY", offset)
 	case OpDivide:
 		return c.simpleInstruction("OP_DIVIDE", offset)

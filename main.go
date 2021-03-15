@@ -1,30 +1,32 @@
 package main
 
-import "github.com/urijn/glox/lib"
+import (
+	"github.com/urijn/glox/backend/vm/stack"
+)
 
 func main() {
-	var vm = lib.NewVM()
+	var vm = stack.NewVM()
 
-	chunk := lib.NewChunk()
+	chunk := stack.NewChunk()
 
 	constant := chunk.AddConstant(1.2)
-	chunk.Write(lib.OpConstant, 123)
+	chunk.Write(stack.OpConstant, 123)
 	chunk.Write(constant, 123)
 
 	constant = chunk.AddConstant(3.4)
-	chunk.Write(lib.OpConstant, 123)
+	chunk.Write(stack.OpConstant, 123)
 	chunk.Write(constant, 123)
 
-	chunk.Write(lib.OpAdd, 123)
+	chunk.Write(stack.OpAdd, 123)
 
 	constant = chunk.AddConstant(5.6)
-	chunk.Write(lib.OpConstant, 123)
+	chunk.Write(stack.OpConstant, 123)
 	chunk.Write(constant, 123)
 
-	chunk.Write(lib.OpDivide, 123)
-	chunk.Write(lib.OpNegate, 123)
+	chunk.Write(stack.OpDivide, 123)
+	chunk.Write(stack.OpNegate, 123)
 
-	chunk.Write(lib.OpReturn, 123)
+	chunk.Write(stack.OpReturn, 123)
 
 	chunk.Disassemble("test chunk")
 

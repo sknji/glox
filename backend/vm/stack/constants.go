@@ -1,6 +1,8 @@
-package lib
+package stack
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Value float64
 

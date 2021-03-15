@@ -1,4 +1,4 @@
-package lib
+package stack
 
 const (
 	// Load the constant for use
@@ -7,6 +7,6 @@ const (
 	OpNegate
 	OpAdd
 	OpSubtract
-	OpMutliply
+	OpMultiply
 	OpDivide
 )

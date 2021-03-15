@@ -1,6 +1,8 @@
-package lib
+package stack
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const StackMax = 512
 
@@ -65,7 +67,7 @@ func (vm *VM) Run() InterpretResult {
 			vm.binaryOperation(BinaryOpAdd)
 		case OpSubtract:
 			vm.binaryOperation(BinaryOpSubtract)
-		case OpMutliply:
+		case OpMultiply:
 			vm.binaryOperation(BinaryOpMultiply)
 		case OpDivide:
 			vm.binaryOperation(BinaryOpDivide)
