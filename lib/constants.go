@@ -8,6 +8,10 @@ func (v Value) String() string {
 	return fmt.Sprintf("%g", v)
 }
 
+func (v Value) Print() {
+	fmt.Print(v.String())
+}
+
 type ValueStore struct {
 	values []Value
 	count  int
