@@ -1,4 +1,4 @@
-package stack
+package vm
 
 const DefaultCapacity = 8
 

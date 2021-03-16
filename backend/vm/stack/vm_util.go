@@ -1,5 +1,7 @@
 package stack
 
+import "github.com/urijn/glox/backend/vm"
+
 type BinaryOp int
 
 const (
@@ -9,24 +11,24 @@ const (
 	BinaryOpDivide
 )
 
-func (vm *VM) incrementIP() {
-	vm.ip += 1
+func (v *VM) incrementIP() {
+	v.ip += 1
 }
 
-func (vm *VM) readByte() byte {
-	defer vm.incrementIP()
-	return vm.chunk.code[vm.ip]
+func (v *VM) readByte() byte {
+	defer v.incrementIP()
+	return v.chunk.Code[v.ip]
 }
 
-func (vm *VM) readConstant() Value {
-	return vm.chunk.constants.values[vm.readByte()]
+func (v *VM) readConstant() vm.Value {
+	return v.chunk.Constants.Values[v.readByte()]
 }
 
-func (vm *VM) binaryOperation(op BinaryOp) {
-	b := vm.Pop()
-	a := vm.Pop()
+func (v *VM) binaryOperation(op BinaryOp) {
+	b := v.Pop()
+	a := v.Pop()
 
-	var result Value
+	var result vm.Value
 	switch op {
 	case BinaryOpAdd:
 		result = a + b
@@ -37,5 +39,5 @@ func (vm *VM) binaryOperation(op BinaryOp) {
 	case BinaryOpSubtract:
 		result = a - b
 	}
-	vm.Push(result)
+	v.Push(result)
 }

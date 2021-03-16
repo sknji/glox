@@ -1,37 +1,65 @@
 package main
 
 import (
+	"bufio"
+	"flag"
+	"fmt"
+	"github.com/urijn/glox/backend/vm"
 	"github.com/urijn/glox/backend/vm/stack"
+	"io/ioutil"
+	"os"
 )
 
+var fileName = flag.String("filename", "", "-f")
+
+func runFile(v vm.VirtualMachine, filename string) error {
+	source, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	switch run(v, source) {
+	case vm.InterpretCompileError:
+		os.Exit(65)
+	case vm.InterpretRuntimeError:
+		os.Exit(70)
+	}
+
+	return nil
+}
+
+func repl(v vm.VirtualMachine) error {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Printf("> ")
+
+		source, err := reader.ReadBytes('\n')
+		if err != nil {
+			continue
+		}
+
+		run(v, source)
+	}
+}
+
+func run(v vm.VirtualMachine, source []byte) vm.InterpretResult {
+	fmt.Println(string(source))
+	//v.Interpret(source)
+	return 0
+}
+
 func main() {
-	var vm = stack.NewVM()
+	flag.Parse()
 
-	chunk := stack.NewChunk()
+	var v = stack.NewVM()
 
-	constant := chunk.AddConstant(1.2)
-	chunk.Write(stack.OpConstant, 123)
-	chunk.Write(constant, 123)
+	if *fileName == "" {
+		_ = repl(v)
+		goto cleanup
+	}
 
-	constant = chunk.AddConstant(3.4)
-	chunk.Write(stack.OpConstant, 123)
-	chunk.Write(constant, 123)
+	_ = runFile(v, *fileName)
 
-	chunk.Write(stack.OpAdd, 123)
-
-	constant = chunk.AddConstant(5.6)
-	chunk.Write(stack.OpConstant, 123)
-	chunk.Write(constant, 123)
-
-	chunk.Write(stack.OpDivide, 123)
-	chunk.Write(stack.OpNegate, 123)
-
-	chunk.Write(stack.OpReturn, 123)
-
-	chunk.Disassemble("test chunk")
-
-	vm.Interpret(chunk)
-
-	vm.Free()
-	chunk.Free()
+cleanup:
+	v.Free()
 }

@@ -2,26 +2,19 @@ package stack
 
 import (
 	"fmt"
+	"github.com/urijn/glox/backend/vm"
 )
 
 const StackMax = 512
 
-type InterpretResult int
-
-const (
-	InterpretOk InterpretResult = iota
-	InterpretCompileError
-	InterpretRuntimeError
-)
-
 type VM struct {
-	chunk *Chunk
+	chunk *vm.Chunk
 
 	// The IP always points to the next instruction, not the one
 	// currently being handled.
 	ip int
 
-	stack [StackMax]Value
+	stack [StackMax]vm.Value
 
 	// Stack pointer pointing at the array element just past the element
 	// containing the top value on the stack.
@@ -33,81 +26,82 @@ type VM struct {
 func NewVM() *VM {
 	return &VM{
 		sp:    0,
-		stack: [StackMax]Value{},
+		stack: [StackMax]vm.Value{},
 		ip:    0,
 		chunk: nil,
 	}
 }
 
 // Run is the most performance critical part of the entire VM.
-func (vm *VM) Run() InterpretResult {
-	for ; ; {
-		if DebugTraceExecution {
-			vm.debug()
+func (v *VM) Run() vm.InterpretResult {
+	for {
+		if vm.DebugTraceExecution {
+			v.debug()
 		}
 
 		// Given a numeric opcode, we need to get to the right code that implements
 		// that instruction's semantics. This process is called "decoding" or
 		// "dispatching" the instruction
-		instr := vm.readByte()
+		instr := v.readByte()
 
 		// We have a single giant switch statement with a case for each opcode.
 		// The body of each case implements that opcode’s behavior.
 		switch instr {
-		case OpReturn:
-			val := vm.Pop()
+		case vm.OpReturn:
+			val := v.Pop()
 			val.Print()
 			fmt.Println()
-			return InterpretOk
-		case OpConstant:
-			vm.Push(vm.readConstant())
-		case OpNegate:
-			vm.Push(-vm.Pop())
-		case OpAdd:
-			vm.binaryOperation(BinaryOpAdd)
-		case OpSubtract:
-			vm.binaryOperation(BinaryOpSubtract)
-		case OpMultiply:
-			vm.binaryOperation(BinaryOpMultiply)
-		case OpDivide:
-			vm.binaryOperation(BinaryOpDivide)
+			return vm.InterpretOk
+		case vm.OpConstant:
+			v.Push(v.readConstant())
+		case vm.OpNegate:
+			v.Push(-v.Pop())
+		case vm.OpAdd:
+			v.binaryOperation(BinaryOpAdd)
+		case vm.OpSubtract:
+			v.binaryOperation(BinaryOpSubtract)
+		case vm.OpMultiply:
+			v.binaryOperation(BinaryOpMultiply)
+		case vm.OpDivide:
+			v.binaryOperation(BinaryOpDivide)
 		}
 	}
 }
 
-func (vm *VM) Interpret(chunk *Chunk) InterpretResult {
-	vm.chunk = chunk
-	vm.ip = 0
-	return vm.Run()
+func (v *VM) Interpret(chunk *vm.Chunk) vm.InterpretResult {
+	v.chunk = chunk
+	v.ip = 0
+	return v.Run()
 }
 
-func (vm *VM) Push(val Value) {
-	vm.stack[vm.sp] = val
-	vm.sp += 1
+func (v *VM) Push(val vm.Value) {
+	v.stack[v.sp] = val
+	v.sp += 1
 }
 
-func (vm *VM) resetStack() {
-	vm.sp = 0
+func (v *VM) resetStack() {
+	v.sp = 0
 }
 
-func (vm *VM) Pop() Value {
-	vm.sp -= 1
-	return vm.stack[vm.sp]
+func (v *VM) Pop() vm.Value {
+	v.sp -= 1
+	return v.stack[v.sp]
 }
 
-func (vm *VM) debug() {
+func (v *VM) debug() {
 	fmt.Printf("          ")
-	for _, slot := range vm.stack {
+	for i, slot := range v.stack {
 		fmt.Printf("[ ")
+		fmt.Printf("%d: ", i)
 		slot.Print()
 		fmt.Printf(" ]")
 	}
 	fmt.Printf("\n")
 
-	vm.chunk.disassembleInstruction(vm.ip)
+	v.chunk.DisassembleInstruction(v.ip)
 }
 
-func (vm *VM) Free() {
-	vm.sp = 0
+func (v *VM) Free() {
+	v.sp = 0
 	// TODO:
 }
