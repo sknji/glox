@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/urijn/glox/backend/vm"
@@ -9,11 +10,18 @@ import (
 	"github.com/urijn/glox/frontend"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
-var fileName = flag.String("filename", "", "-f")
+var (
+	ErrWrongFileExt = errors.New("filename has to have .glox extension")
+)
 
 func runFile(v vm.VirtualMachine, filename string) error {
+	if !strings.HasSuffix(filename, ".glox") {
+		return ErrWrongFileExt
+	}
+
 	source, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -44,8 +52,6 @@ func repl(v vm.VirtualMachine) error {
 }
 
 func run(v vm.VirtualMachine, source []byte) vm.InterpretResult {
-	//fmt.Println(string(source))
-
 	compiler := frontend.NewCompiler(source)
 
 	chunk, ok := compiler.Compile()
@@ -61,12 +67,15 @@ func main() {
 
 	var v = stack.NewVM()
 
-	if *fileName == "" {
+	var filename string
+
+	if len(flag.Args()) <= 0 {
 		_ = repl(v)
 		goto cleanup
 	}
 
-	_ = runFile(v, *fileName)
+	filename = flag.Arg(0)
+	_ = runFile(v, filename)
 
 cleanup:
 	v.Free()

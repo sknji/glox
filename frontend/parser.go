@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"fmt"
 	"github.com/urijn/glox/opcode"
 	"github.com/urijn/glox/value"
 	"strconv"
@@ -85,7 +84,7 @@ func (c *Compiler) binary() {
 	}
 }
 
-func (c *Compiler) parsePrecedence(prec Precedence) {
+func (c *Compiler) parsePrecedence(precedence Precedence) {
 	c.advance()
 	prefix := c.getRule(c.prevToken().Type).prefix
 	if prefix == nil {
@@ -95,11 +94,7 @@ func (c *Compiler) parsePrecedence(prec Precedence) {
 
 	prefix()
 
-	fmt.Printf("----%s, %d, %d\n", getTokenStr(c.currToken().Type),
-		prec,
-		c.getRule(c.currToken().Type).precedence)
-
-	for prec <= c.getRule(c.currToken().Type).precedence {
+	for precedence <= c.getRule(c.currToken().Type).precedence {
 		c.advance()
 
 		infix := c.getRule(c.prevToken().Type).infix

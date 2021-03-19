@@ -5,6 +5,7 @@ import (
 	"github.com/urijn/glox/shared"
 )
 
+
 type Value float64
 
 func (v Value) String() string {

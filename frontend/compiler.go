@@ -51,7 +51,6 @@ func (c *Compiler) advance() {
 
 	for {
 		c.setCurrToken(c.scanner.scanToken())
-		fmt.Printf("%+v, %s\n",c.parser.current, getTokenStr(c.parser.current.Type))
 		if c.parser.current.Type != TokenError {
 			break
 		}
