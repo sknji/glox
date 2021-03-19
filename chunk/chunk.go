@@ -1,4 +1,9 @@
-package vm
+package chunk
+
+import (
+	"github.com/urijn/glox/shared"
+	"github.com/urijn/glox/value"
+)
 
 type Chunk struct {
 	Code  []byte
@@ -6,7 +11,7 @@ type Chunk struct {
 	Count int
 	Cap   int
 
-	Constants *ValueStore
+	Constants *value.ValueStore
 }
 
 func NewChunk() *Chunk {
@@ -15,13 +20,13 @@ func NewChunk() *Chunk {
 		Cap:       0,
 		Code:      []byte{},
 		Lines:     []uint{},
-		Constants: NewValueStore(),
+		Constants: value.NewValueStore(),
 	}
 }
 
 func (c *Chunk) Write(byte byte, line uint) {
 	if c.Cap < c.Count+1 {
-		c.Cap = GrowCapacity(c.Cap)
+		c.Cap = shared.GrowCapacity(c.Cap)
 
 		tmp := make([]uint8, c.Cap)
 		copy(tmp, c.Code)
@@ -44,7 +49,7 @@ func (c *Chunk) Free() {
 	c.Count = 0
 }
 
-func (c *Chunk) AddConstant(value Value) uint8 {
+func (c *Chunk) AddConstant(value value.Value) uint8 {
 	c.Constants.Write(value)
 	return uint8(c.Constants.Count - 1)
 }

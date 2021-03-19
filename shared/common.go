@@ -1,4 +1,7 @@
-package vm
+package shared
+
+const DebugPrintCode = true
+const DebugTraceExecution = true
 
 const DefaultCapacity = 8
 

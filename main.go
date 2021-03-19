@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/urijn/glox/backend/vm"
 	"github.com/urijn/glox/backend/vm/stack"
+	"github.com/urijn/glox/frontend"
 	"io/ioutil"
 	"os"
 )
@@ -43,9 +44,16 @@ func repl(v vm.VirtualMachine) error {
 }
 
 func run(v vm.VirtualMachine, source []byte) vm.InterpretResult {
-	fmt.Println(string(source))
-	//v.Interpret(source)
-	return 0
+	//fmt.Println(string(source))
+
+	compiler := frontend.NewCompiler(source)
+
+	chunk, ok := compiler.Compile()
+	if !ok {
+		return vm.InterpretCompileError
+	}
+
+	return v.Interpret(chunk)
 }
 
 func main() {

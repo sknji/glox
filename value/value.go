@@ -1,7 +1,8 @@
-package vm
+package value
 
 import (
 	"fmt"
+	"github.com/urijn/glox/shared"
 )
 
 type Value float64
@@ -14,6 +15,10 @@ func (v Value) Print() {
 	fmt.Print(v.String())
 }
 
+func (v Value) PrintLn() {
+	fmt.Println(v.String())
+}
+
 type ValueStore struct {
 	Values []Value
 	Count  int
@@ -21,12 +26,12 @@ type ValueStore struct {
 }
 
 func NewValueStore() *ValueStore {
-	return &ValueStore{Values: make([]Value, DefaultCapacity)}
+	return &ValueStore{Values: make([]Value, shared.DefaultCapacity)}
 }
 
 func (c *ValueStore) Write(value Value) {
 	if c.Cap < c.Count+1 {
-		c.Cap = GrowCapacity(c.Cap)
+		c.Cap = shared.GrowCapacity(c.Cap)
 		tmp := make([]Value, c.Cap)
 		c.Values = tmp
 	}

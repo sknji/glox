@@ -1,10 +1,9 @@
-package vm
+package chunk
 
 import (
 	"fmt"
+	"github.com/urijn/glox/opcode"
 )
-
-const DebugTraceExecution = true
 
 func (c *Chunk) Disassemble(name string) {
 	fmt.Printf("== %s ==\n", name)
@@ -26,19 +25,19 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 
 	var instr = c.Code[offset]
 	switch instr {
-	case OpReturn:
+	case opcode.OpReturn:
 		return c.SimpleInstruction("OP_RETURN", offset)
-	case OpConstant:
+	case opcode.OpConstant:
 		return c.ConstantInstruction("OP_CONSTANT", offset)
-	case OpNegate:
+	case opcode.OpNegate:
 		return c.SimpleInstruction("OP_NEGATE", offset)
-	case OpAdd:
+	case opcode.OpAdd:
 		return c.SimpleInstruction("OP_ADD", offset)
-	case OpSubtract:
+	case opcode.OpSubtract:
 		return c.SimpleInstruction("OP_SUBTRACT", offset)
-	case OpMultiply:
+	case opcode.OpMultiply:
 		return c.SimpleInstruction("OP_MULTIPLY", offset)
-	case OpDivide:
+	case opcode.OpDivide:
 		return c.SimpleInstruction("OP_DIVIDE", offset)
 	default:
 		fmt.Printf("Unknown opcode %d\n", instr)

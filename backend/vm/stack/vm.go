@@ -3,18 +3,22 @@ package stack
 import (
 	"fmt"
 	"github.com/urijn/glox/backend/vm"
+	"github.com/urijn/glox/chunk"
+	"github.com/urijn/glox/opcode"
+	"github.com/urijn/glox/shared"
+	"github.com/urijn/glox/value"
 )
 
 const StackMax = 512
 
 type VM struct {
-	chunk *vm.Chunk
+	chunk *chunk.Chunk
 
 	// The IP always points to the next instruction, not the one
 	// currently being handled.
 	ip int
 
-	stack [StackMax]vm.Value
+	stack [StackMax]value.Value
 
 	// Stack pointer pointing at the array element just past the element
 	// containing the top value on the stack.
@@ -26,7 +30,7 @@ type VM struct {
 func NewVM() *VM {
 	return &VM{
 		sp:    0,
-		stack: [StackMax]vm.Value{},
+		stack: [StackMax]value.Value{},
 		ip:    0,
 		chunk: nil,
 	}
@@ -35,7 +39,7 @@ func NewVM() *VM {
 // Run is the most performance critical part of the entire VM.
 func (v *VM) Run() vm.InterpretResult {
 	for {
-		if vm.DebugTraceExecution {
+		if shared.DebugTraceExecution {
 			v.debug()
 		}
 
@@ -47,34 +51,33 @@ func (v *VM) Run() vm.InterpretResult {
 		// We have a single giant switch statement with a case for each opcode.
 		// The body of each case implements that opcode’s behavior.
 		switch instr {
-		case vm.OpReturn:
+		case opcode.OpReturn:
 			val := v.Pop()
-			val.Print()
-			fmt.Println()
+			val.PrintLn()
 			return vm.InterpretOk
-		case vm.OpConstant:
+		case opcode.OpConstant:
 			v.Push(v.readConstant())
-		case vm.OpNegate:
+		case opcode.OpNegate:
 			v.Push(-v.Pop())
-		case vm.OpAdd:
+		case opcode.OpAdd:
 			v.binaryOperation(BinaryOpAdd)
-		case vm.OpSubtract:
+		case opcode.OpSubtract:
 			v.binaryOperation(BinaryOpSubtract)
-		case vm.OpMultiply:
+		case opcode.OpMultiply:
 			v.binaryOperation(BinaryOpMultiply)
-		case vm.OpDivide:
+		case opcode.OpDivide:
 			v.binaryOperation(BinaryOpDivide)
 		}
 	}
 }
 
-func (v *VM) Interpret(chunk *vm.Chunk) vm.InterpretResult {
+func (v *VM) Interpret(chunk *chunk.Chunk) vm.InterpretResult {
 	v.chunk = chunk
 	v.ip = 0
 	return v.Run()
 }
 
-func (v *VM) Push(val vm.Value) {
+func (v *VM) Push(val value.Value) {
 	v.stack[v.sp] = val
 	v.sp += 1
 }
@@ -83,7 +86,7 @@ func (v *VM) resetStack() {
 	v.sp = 0
 }
 
-func (v *VM) Pop() vm.Value {
+func (v *VM) Pop() value.Value {
 	v.sp -= 1
 	return v.stack[v.sp]
 }

@@ -1,14 +1,16 @@
 package frontend
 
 type Scanner struct {
+	start   int
 	current int
-	line    int
+	line    uint
 	source  []byte
 	length  int
 }
 
 func NewScanner(source []byte) *Scanner {
 	return &Scanner{
+		start:   0,
 		current: 0,
 		line:    1,
 		source:  source,
@@ -20,6 +22,8 @@ func NewScanner(source []byte) *Scanner {
 // a new token when we enter the function.
 func (s *Scanner) scanToken() *Token {
 	s.skipWhitespace()
+
+	s.start = s.current
 
 	if s.isAtEnd() {
 		return s.makeToken("", TokenEof)
@@ -128,12 +132,12 @@ func (s *Scanner) errorToken(message string) *Token {
 }
 
 func (s *Scanner) isAtEnd() bool {
-	return s.current >= s.length
+	return s.current >= s.length-1
 }
 
 func (s *Scanner) advance() byte {
 	s.current += 1
-	return s.source[s.current]
+	return s.source[s.current-1]
 }
 
 // Handle all the white spaces apart from the new lines
@@ -161,7 +165,6 @@ func (s *Scanner) peekNext() byte {
 }
 
 func (s *Scanner) string() *Token {
-	start := s.current
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line += 1
@@ -177,11 +180,10 @@ func (s *Scanner) string() *Token {
 	// Consume the closing quote
 	s.advance()
 
-	return s.makeToken(string(s.source[start:s.current]), TokenString)
+	return s.makeToken(string(s.source[s.start:s.current]), TokenString)
 }
 
 func (s *Scanner) number() *Token {
-	start := s.current
 	for isDigit(s.peek()) {
 		s.advance()
 	}
@@ -194,16 +196,16 @@ func (s *Scanner) number() *Token {
 		s.advance()
 	}
 
-	return s.makeToken(string(s.source[start:s.current]), TokenNumber)
+	num := string(s.source[s.start:s.current])
+	return s.makeToken(num, TokenNumber)
 }
 
 func (s *Scanner) identifier() *Token {
-	start := s.current
 	for isAlpha(s.peek()) || isDigit(s.peek()) {
 		s.advance()
 	}
 
-	ident := string(s.source[start:s.current])
+	ident := string(s.source[s.start:s.current])
 	return s.makeToken(ident, s.identifierType(ident))
 }
 
