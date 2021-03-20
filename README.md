@@ -1,6 +1,6 @@
 # glox
 
-Learning project for Golang implementation of [lox](https://craftinginterpreters.com/a-bytecode-virtual-machine.html) 
+Learning project for Golang implementation of [lox](https://craftinginterpreters.com/a-bytecode-virtual-machine.html) and backend language implementation.
 
 Goals:
 
