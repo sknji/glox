@@ -58,10 +58,10 @@ func (s *Scanner) scanToken() *Token {
 	case '+':
 		return s.makeToken("+", TokenPlus)
 	case '/':
-		if s.peekNext() == '/' {
-			for s.peek() != '\n' && !s.isAtEnd() {
-				s.advance()
-			}
+		if a, ok := s.peekNext(); ok && a == '/' {
+			s.advanceCond(func(b byte) bool {
+				return b != '\n'
+			})
 		} else {
 			return s.makeToken("/", TokenSlash)
 		}
@@ -132,7 +132,7 @@ func (s *Scanner) errorToken(message string) *Token {
 }
 
 func (s *Scanner) isAtEnd() bool {
-	return s.current >= s.length-1
+	return s.current > s.length-1
 }
 
 func (s *Scanner) advance() byte {
@@ -140,10 +140,24 @@ func (s *Scanner) advance() byte {
 	return s.source[s.current-1]
 }
 
+func (s *Scanner) advanceCond(fun func(byte) bool) {
+	a, ok := s.peek()
+
+	for ok && fun(a) {
+		s.advance()
+		a, ok = s.peek()
+	}
+}
+
 // Handle all the white spaces apart from the new lines
 func (s *Scanner) skipWhitespace() {
 	for {
-		switch s.peek() {
+		a, ok := s.peek()
+		if !ok {
+			return
+		}
+
+		switch a {
 		case ' ', '\r', '\t':
 			s.advance()
 		default:
@@ -152,25 +166,30 @@ func (s *Scanner) skipWhitespace() {
 	}
 }
 
-func (s *Scanner) peek() byte {
-	return s.source[s.current]
-}
-
-func (s *Scanner) peekNext() byte {
+func (s *Scanner) peek() (byte, bool) {
 	if s.isAtEnd() {
-		return 0
+		return 0, false
 	}
 
-	return s.source[s.current+1]
+	return s.source[s.current], true
+}
+
+func (s *Scanner) peekNext() (byte, bool) {
+	if s.isAtEnd() {
+		return 0, false
+	}
+
+	return s.source[s.current+1], true
 }
 
 func (s *Scanner) string() *Token {
-	for s.peek() != '"' && !s.isAtEnd() {
-		if s.peek() == '\n' {
+	for a, ok := s.peek(); ok && a != '"' && !s.isAtEnd(); {
+		if a == '\n' {
 			s.line += 1
 		}
 
 		s.advance()
+		a, ok = s.peek()
 	}
 
 	if s.isAtEnd() {
@@ -184,26 +203,24 @@ func (s *Scanner) string() *Token {
 }
 
 func (s *Scanner) number() *Token {
-	for isDigit(s.peek()) {
+	s.advanceCond(isDigit)
+
+	a, oka := s.peek()
+	b, okb := s.peekNext()
+	if oka && okb && a == '.' && isDigit(b) {
 		s.advance()
 	}
 
-	if s.peek() == '.' && isDigit(s.peekNext()) {
-		s.advance()
-	}
-
-	for isDigit(s.peek()) {
-		s.advance()
-	}
+	s.advanceCond(isDigit)
 
 	num := string(s.source[s.start:s.current])
 	return s.makeToken(num, TokenNumber)
 }
 
 func (s *Scanner) identifier() *Token {
-	for isAlpha(s.peek()) || isDigit(s.peek()) {
-		s.advance()
-	}
+	s.advanceCond(func(b byte) bool {
+		return isAlpha(b) || isDigit(b)
+	})
 
 	ident := string(s.source[s.start:s.current])
 	return s.makeToken(ident, s.identifierType(ident))

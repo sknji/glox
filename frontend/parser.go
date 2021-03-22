@@ -43,7 +43,7 @@ func (c *Compiler) number() {
 		c.error("Invalid number: " + err.Error())
 	}
 
-	c.emitConstant(value.Value(n))
+	c.emitConstant(value.NewValue(value.ValNumber, n))
 }
 
 func (c *Compiler) grouping() {
@@ -59,6 +59,8 @@ func (c *Compiler) unary() {
 	switch tokType {
 	case TokenMinus:
 		c.emitBytes(opcode.OpNegate)
+	case TokenBang:
+		c.emitBytes(opcode.OpNot)
 	default:
 		return
 	}
@@ -84,8 +86,21 @@ func (c *Compiler) binary() {
 	}
 }
 
+func (c *Compiler) literal() {
+	tok := c.prevToken()
+	switch tok.Type {
+	case TokenFalse:
+		c.emitBytes(opcode.OpFalse)
+	case TokenNil:
+		c.emitBytes(opcode.OpNil)
+	case TokenTrue:
+		c.emitBytes(opcode.OpTrue)
+	}
+}
+
 func (c *Compiler) parsePrecedence(precedence Precedence) {
 	c.advance()
+	//fmt.Printf("parsePrecedence - %+v\n",c.prevToken())
 	prefix := c.getRule(c.prevToken().Type).prefix
 	if prefix == nil {
 		c.error("Expect expression.")
@@ -94,9 +109,10 @@ func (c *Compiler) parsePrecedence(precedence Precedence) {
 
 	prefix()
 
+	//fmt.Printf("parsePrecedence infix - %+v\n",c.currToken())
 	for precedence <= c.getRule(c.currToken().Type).precedence {
 		c.advance()
-
+		//fmt.Printf("parsePrecedence infix ok - %+v\n",c.prevToken())
 		infix := c.getRule(c.prevToken().Type).infix
 		infix()
 	}

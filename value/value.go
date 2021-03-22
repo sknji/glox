@@ -5,35 +5,49 @@ import (
 	"github.com/urijn/glox/shared"
 )
 
-
-type Value float64
-
-func (v Value) String() string {
-	return fmt.Sprintf("%g", v)
+type Value struct {
+	ValType ValueType
+	Val     *ConcreteValue
 }
 
-func (v Value) Print() {
+func NewValue(valueType ValueType, val interface{}) *Value {
+	return &Value{ValType: valueType, Val: NewConcreteValue(val)}
+}
+
+func (v *Value) Is(t ValueType) bool {
+	return v.ValType == t
+}
+
+func (v *Value) String() string {
+	if v == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%+v", v.Val)
+}
+
+func (v *Value) Print() {
 	fmt.Print(v.String())
 }
 
-func (v Value) PrintLn() {
+func (v *Value) Println() {
 	fmt.Println(v.String())
 }
 
 type ValueStore struct {
-	Values []Value
+	Values []*Value
 	Count  int
 	Cap    int
 }
 
 func NewValueStore() *ValueStore {
-	return &ValueStore{Values: make([]Value, shared.DefaultCapacity)}
+	return &ValueStore{Values: make([]*Value, shared.DefaultCapacity)}
 }
 
-func (c *ValueStore) Write(value Value) {
+func (c *ValueStore) Write(value *Value) {
 	if c.Cap < c.Count+1 {
 		c.Cap = shared.GrowCapacity(c.Cap)
-		tmp := make([]Value, c.Cap)
+		tmp := make([]*Value, c.Cap)
 		c.Values = tmp
 	}
 

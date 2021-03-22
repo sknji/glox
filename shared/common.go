@@ -1,7 +1,7 @@
 package shared
 
 const DebugPrintCode = true
-const DebugTraceExecution = true
+const DebugTraceExecution = false
 
 const DefaultCapacity = 8
 

@@ -51,6 +51,8 @@ func (c *Compiler) advance() {
 
 	for {
 		c.setCurrToken(c.scanner.scanToken())
+		//fmt.Printf("advance - curr: %+v, prev: %+v\n",
+		//	c.currToken(), c.prevToken())
 		if c.parser.current.Type != TokenError {
 			break
 		}
@@ -112,7 +114,7 @@ func (c *Compiler) errorAt(token *Token, msg string) {
 	c.parser.hadError = true
 }
 
-func (c *Compiler) makeConstant(value value.Value) uint8 {
+func (c *Compiler) makeConstant(value *value.Value) uint8 {
 	constant := c.chunk.AddConstant(value)
 	if constant > math.MaxUint8 {
 		c.error("Too many constants in one chunk.")

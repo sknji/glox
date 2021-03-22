@@ -8,9 +8,9 @@ import (
 func (c *Chunk) Disassemble(name string) {
 	fmt.Printf("== %s ==\n", name)
 
-	var offset = 0
+	offset := 0
 	for offset < c.Count {
-		offset += c.DisassembleInstruction(offset)
+		offset = c.DisassembleInstruction(offset)
 	}
 }
 
@@ -23,7 +23,7 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		fmt.Printf("%4d ", c.Lines[offset])
 	}
 
-	var instr = c.Code[offset]
+	var instr = opcode.OpCode(c.Code[offset])
 	switch instr {
 	case opcode.OpReturn:
 		return c.SimpleInstruction("OP_RETURN", offset)
@@ -39,6 +39,14 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return c.SimpleInstruction("OP_MULTIPLY", offset)
 	case opcode.OpDivide:
 		return c.SimpleInstruction("OP_DIVIDE", offset)
+	case opcode.OpNil:
+		return c.SimpleInstruction("OP_NIL", offset)
+	case opcode.OpTrue:
+		return c.SimpleInstruction("OP_TRUE", offset)
+	case opcode.OpFalse:
+		return c.SimpleInstruction("OP_FALSE", offset)
+	case opcode.OpNot:
+		return c.SimpleInstruction("OP_NOT", offset)
 	default:
 		fmt.Printf("Unknown opcode %d\n", instr)
 		return offset + 1

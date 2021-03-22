@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -52,6 +53,11 @@ func repl(v vm.VirtualMachine) error {
 }
 
 func run(v vm.VirtualMachine, source []byte) vm.InterpretResult {
+	source = bytes.TrimSpace(source)
+	if len(source) <= 0 {
+		return vm.InterpretOk
+	}
+
 	compiler := frontend.NewCompiler(source)
 
 	chunk, ok := compiler.Compile()

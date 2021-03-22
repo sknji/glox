@@ -1,7 +1,6 @@
 package stack
 
 import (
-	"fmt"
 	"github.com/urijn/glox/backend/vm"
 	"github.com/urijn/glox/chunk"
 	"github.com/urijn/glox/opcode"
@@ -18,7 +17,7 @@ type VM struct {
 	// currently being handled.
 	ip int
 
-	stack [StackMax]value.Value
+	stack [StackMax]*value.Value
 
 	// Stack pointer pointing at the array element just past the element
 	// containing the top value on the stack.
@@ -30,7 +29,7 @@ type VM struct {
 func NewVM() *VM {
 	return &VM{
 		sp:    0,
-		stack: [StackMax]value.Value{},
+		stack: [StackMax]*value.Value{},
 		ip:    0,
 		chunk: nil,
 	}
@@ -46,27 +45,41 @@ func (v *VM) Run() vm.InterpretResult {
 		// Given a numeric opcode, we need to get to the right code that implements
 		// that instruction's semantics. This process is called "decoding" or
 		// "dispatching" the instruction
-		instr := v.readByte()
+		instr := opcode.OpCode(v.readByte())
 
 		// We have a single giant switch statement with a case for each opcode.
 		// The body of each case implements that opcode’s behavior.
 		switch instr {
 		case opcode.OpReturn:
-			val := v.Pop()
-			val.PrintLn()
+			v.Pop().Println()
 			return vm.InterpretOk
 		case opcode.OpConstant:
 			v.Push(v.readConstant())
 		case opcode.OpNegate:
-			v.Push(-v.Pop())
-		case opcode.OpAdd:
-			v.binaryOperation(BinaryOpAdd)
-		case opcode.OpSubtract:
-			v.binaryOperation(BinaryOpSubtract)
-		case opcode.OpMultiply:
-			v.binaryOperation(BinaryOpMultiply)
-		case opcode.OpDivide:
-			v.binaryOperation(BinaryOpDivide)
+			val := v.Peek(0)
+			if !val.Is(value.ValNumber) {
+				v.runtimeError("Operand must be a number.")
+				return vm.InterpretRuntimeError
+			}
+			val = v.Pop()
+			v.Push(value.NewValue(value.ValNumber, -val.Val.GetAsNumber()))
+		case opcode.OpAdd,
+			opcode.OpSubtract,
+			opcode.OpMultiply,
+			opcode.OpDivide:
+			r := v.binaryOperation(instr)
+			if !r.IsSuccess() {
+				return r
+			}
+		case opcode.OpNil:
+			v.Push(value.NewValue(value.ValNil, nil))
+		case opcode.OpTrue:
+			v.Push(value.NewValue(value.ValBool, true))
+		case opcode.OpFalse:
+			v.Push(value.NewValue(value.ValBool, false))
+		case opcode.OpNot:
+			val := v.Pop()
+			v.Push(value.NewValue(value.ValBool, v.isFalsey(val)))
 		}
 	}
 }
@@ -77,31 +90,22 @@ func (v *VM) Interpret(chunk *chunk.Chunk) vm.InterpretResult {
 	return v.Run()
 }
 
-func (v *VM) Push(val value.Value) {
+func (v *VM) Push(val *value.Value) {
 	v.stack[v.sp] = val
 	v.sp += 1
 }
 
-func (v *VM) resetStack() {
-	v.sp = 0
-}
-
-func (v *VM) Pop() value.Value {
+func (v *VM) Pop() *value.Value {
 	v.sp -= 1
 	return v.stack[v.sp]
 }
 
-func (v *VM) debug() {
-	fmt.Printf("          ")
-	for i, slot := range v.stack {
-		fmt.Printf("[ ")
-		fmt.Printf("%d: ", i)
-		slot.Print()
-		fmt.Printf(" ]")
-	}
-	fmt.Printf("\n")
+func (v *VM) Peek(distance int) *value.Value {
+	return v.stack[v.sp-1-distance]
+}
 
-	v.chunk.DisassembleInstruction(v.ip)
+func (v *VM) resetStack() {
+	v.sp = 0
 }
 
 func (v *VM) Free() {

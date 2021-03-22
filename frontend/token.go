@@ -53,6 +53,10 @@ const (
 	TokenEof
 )
 
+func (tt TokenType) String() string {
+	return getTokenStr(tt)
+}
+
 type Token struct {
 	Type TokenType
 	Val  string

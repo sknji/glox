@@ -49,7 +49,7 @@ func (c *Chunk) Free() {
 	c.Count = 0
 }
 
-func (c *Chunk) AddConstant(value value.Value) uint8 {
+func (c *Chunk) AddConstant(value *value.Value) uint8 {
 	c.Constants.Write(value)
 	return uint8(c.Constants.Count - 1)
 }
