@@ -1,10 +1,8 @@
 package opcode
 
-type OpCode byte
-
 const (
 	// Load the constant for use
-	OpReturn OpCode = iota + 1
+	OpReturn byte = iota + 1
 	OpConstant
 	OpNegate
 	OpAdd

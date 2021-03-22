@@ -14,6 +14,19 @@ func NewValue(valueType ValueType, val interface{}) *Value {
 	return &Value{ValType: valueType, Val: NewConcreteValue(val)}
 }
 
+func NewObjectValue(objType ObjType, val Object) *Value {
+	return NewValue(ValObj, val)
+}
+
+func NewObjectValueString(s string) *Value {
+	str := NewObjectString(s)
+	return NewObjectValue(ObjString, str)
+}
+
+func (v *Value) IsObjType(t ObjType) bool {
+	return v.Is(ValObj) && v.Val.GetObject().Type() == t
+}
+
 func (v *Value) Is(t ValueType) bool {
 	return v.ValType == t
 }

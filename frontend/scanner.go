@@ -199,7 +199,7 @@ func (s *Scanner) string() *Token {
 	// Consume the closing quote
 	s.advance()
 
-	return s.makeToken(string(s.source[s.start:s.current]), TokenString)
+	return s.makeToken(string(s.source[s.start+1:s.current-1]), TokenString)
 }
 
 func (s *Scanner) number() *Token {

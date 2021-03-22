@@ -6,4 +6,5 @@ const (
 	ValBool ValueType = iota + 1
 	ValNil
 	ValNumber
+	ValObj
 )

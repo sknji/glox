@@ -45,7 +45,7 @@ func (v *VM) Run() vm.InterpretResult {
 		// Given a numeric opcode, we need to get to the right code that implements
 		// that instruction's semantics. This process is called "decoding" or
 		// "dispatching" the instruction
-		instr := opcode.OpCode(v.readByte())
+		instr := v.readByte()
 
 		// We have a single giant switch statement with a case for each opcode.
 		// The body of each case implements that opcode’s behavior.
@@ -62,12 +62,32 @@ func (v *VM) Run() vm.InterpretResult {
 				return vm.InterpretRuntimeError
 			}
 			val = v.Pop()
-			v.Push(value.NewValue(value.ValNumber, -val.Val.GetAsNumber()))
-		case opcode.OpAdd,
+			v.Push(value.NewValue(value.ValNumber, -val.Val.GetNumber()))
+		case
 			opcode.OpSubtract,
 			opcode.OpMultiply,
 			opcode.OpDivide:
-			r := v.binaryOperation(instr)
+			r := v.binaryOperation(value.ValNumber, instr)
+			if !r.IsSuccess() {
+				return r
+			}
+		case opcode.OpAdd:
+			b := v.Peek(0)
+			a := v.Peek(1)
+
+			if a.IsObjType(value.ObjString) && b.IsObjType(value.ObjString){
+				v.concatenate()
+			} else if a.Is(value.ValNumber) && b.Is(value.ValNumber){
+				bVal := v.Pop().Val.GetNumber()
+				aVal := v.Pop().Val.GetNumber()
+				v.Push(value.NewValue(value.ValNumber, bVal + aVal))
+			} else {
+				v.runtimeError("Operands must be two numbers or two strings.")
+				return vm.InterpretRuntimeError
+			}
+		case opcode.OpGreater,
+			opcode.OpLess:
+			r := v.binaryOperation(value.ValBool, instr)
 			if !r.IsSuccess() {
 				return r
 			}
@@ -80,6 +100,9 @@ func (v *VM) Run() vm.InterpretResult {
 		case opcode.OpNot:
 			val := v.Pop()
 			v.Push(value.NewValue(value.ValBool, v.isFalsey(val)))
+		case opcode.OpEqual:
+			b, a := v.Pop(), v.Pop()
+			v.Push(value.NewValue(value.ValBool, v.valuesEqual(a, b)))
 		}
 	}
 }

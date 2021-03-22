@@ -5,8 +5,8 @@ import (
 	"github.com/urijn/glox/value"
 )
 
-func (c *Compiler) emitBytes(op opcode.OpCode, operands ...byte) {
-	c.chunk.EmitBytes(c.prevToken().Line, op, operands...)
+func (c *Compiler) emitBytes(op ...byte) {
+	c.chunk.EmitBytes(c.prevToken().Line, op...)
 }
 
 func (c *Compiler) emitConstant(value *value.Value) {

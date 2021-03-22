@@ -23,7 +23,7 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		fmt.Printf("%4d ", c.Lines[offset])
 	}
 
-	var instr = opcode.OpCode(c.Code[offset])
+	var instr = c.Code[offset]
 	switch instr {
 	case opcode.OpReturn:
 		return c.SimpleInstruction("OP_RETURN", offset)
@@ -47,6 +47,12 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return c.SimpleInstruction("OP_FALSE", offset)
 	case opcode.OpNot:
 		return c.SimpleInstruction("OP_NOT", offset)
+	case opcode.OpEqual:
+		return c.SimpleInstruction("OP_EQUAL", offset)
+	case opcode.OpGreater:
+		return c.SimpleInstruction("OP_GREATER", offset)
+	case opcode.OpLess:
+		return c.SimpleInstruction("OP_LESS", offset)
 	default:
 		fmt.Printf("Unknown opcode %d\n", instr)
 		return offset + 1

@@ -6,22 +6,6 @@ import (
 	"strconv"
 )
 
-type Precedence uint
-
-const (
-	precNone Precedence = iota + 1
-	precAssignment
-	precOr
-	precAnd
-	precEquality
-	precComparison
-	precTerm
-	precFactor
-	precUnary
-	precCall
-	precPrimary
-)
-
 type Parser struct {
 	current   *Token
 	previous  *Token
@@ -35,6 +19,10 @@ func NewParser() *Parser {
 
 func (c *Compiler) expression() {
 	c.parsePrecedence(precAssignment)
+}
+
+func (c *Compiler) string() {
+	c.emitConstant(value.NewObjectValueString(c.parser.previous.Val))
 }
 
 func (c *Compiler) number() {
@@ -81,6 +69,18 @@ func (c *Compiler) binary() {
 		c.emitBytes(opcode.OpMultiply)
 	case TokenSlash:
 		c.emitBytes(opcode.OpDivide)
+	case TokenBangEqual:
+		c.emitBytes(opcode.OpEqual, opcode.OpNot)
+	case TokenEqualEqual:
+		c.emitBytes(opcode.OpEqual)
+	case TokenGreater:
+		c.emitBytes(opcode.OpGreater)
+	case TokenGreaterEqual:
+		c.emitBytes(opcode.OpLess, opcode.OpNot)
+	case TokenLess:
+		c.emitBytes(opcode.OpLess)
+	case TokenLessEqual:
+		c.emitBytes(opcode.OpLess, opcode.OpNot)
 	default:
 		return
 	}

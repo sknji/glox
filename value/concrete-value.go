@@ -1,6 +1,8 @@
 package value
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type ConcreteValue struct {
 	Val interface{}
@@ -14,20 +16,20 @@ func (c *ConcreteValue) Get() interface{} {
 	return c.Val
 }
 
-func (c *ConcreteValue) Set(val interface{}) {
-	c.Val = val
+func (c *ConcreteValue) GetObject() Object {
+	return (c.Val).(Object)
 }
 
-func (c *ConcreteValue) GetAsBool() bool {
+func (c *ConcreteValue) GetBool() bool {
 	return (c.Val).(bool)
 }
 
-func (c *ConcreteValue) GetAsNumber() float64 {
+func (c *ConcreteValue) GetNumber() float64 {
 	return (c.Val).(float64)
 }
 
 func (c *ConcreteValue) Print() {
-	fmt.Printf("%+v", c.Val)
+	fmt.Printf(c.String())
 }
 
 func (c *ConcreteValue) String() string {

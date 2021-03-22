@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"bytes"
 	"github.com/urijn/glox/backend/vm"
 	"github.com/urijn/glox/opcode"
 	"github.com/urijn/glox/value"
@@ -19,7 +20,7 @@ func (v *VM) readConstant() *value.Value {
 	return v.chunk.Constants.Values[v.readByte()]
 }
 
-func (v *VM) binaryOperation(op opcode.OpCode) vm.InterpretResult {
+func (v *VM) binaryOperation(valType value.ValueType, op byte) vm.InterpretResult {
 	b := v.Peek(0)
 	a := v.Peek(1)
 
@@ -28,27 +29,60 @@ func (v *VM) binaryOperation(op opcode.OpCode) vm.InterpretResult {
 		return vm.InterpretRuntimeError
 	}
 
-	bNum := v.Pop().Val.GetAsNumber()
-	aNum := v.Pop().Val.GetAsNumber()
+	bVal := v.Pop().Val.GetNumber()
+	aVal := v.Pop().Val.GetNumber()
 
-	var result float64
+	var result interface{}
 	switch op {
 	case opcode.OpAdd:
-		result = aNum + bNum
+		result = aVal + bVal
 	case opcode.OpDivide:
-		result = aNum / bNum
+		result = aVal / bVal
 	case opcode.OpMultiply:
-		result = aNum * bNum
+		result = aVal * bVal
 	case opcode.OpSubtract:
-		result = aNum - bNum
+		result = aVal - bVal
+	case opcode.OpGreater:
+		result = aVal > bVal
+	case opcode.OpLess:
+		result = aVal < bVal
 	}
 
-	v.Push(value.NewValue(value.ValNumber, result))
+	v.Push(value.NewValue(valType, result))
 
 	return vm.InterpretOk
 }
 
 func (v *VM) isFalsey(val *value.Value) bool {
 	return val.Is(value.ValNil) ||
-		(val.Is(value.ValBool) && !val.Val.GetAsBool())
+		(val.Is(value.ValBool) && !val.Val.GetBool())
+}
+
+func (v *VM) valuesEqual(a, b *value.Value) bool {
+	if a.ValType != b.ValType {
+		return false
+	}
+
+	switch a.ValType {
+	case value.ValBool:
+		return a.Val.GetBool() == b.Val.GetBool()
+	case value.ValNil:
+		return true
+	case value.ValNumber:
+		return a.Val.GetNumber() == a.Val.GetNumber()
+	case value.ValObj:
+		return a.Val.Get() == b.Val.Get()
+	default:
+		return false
+	}
+}
+
+func (v *VM) concatenate()  {
+	bStr := (v.Pop().Val.GetObject()).(*value.ObjectString)
+	aStr := v.Pop().Val.GetObject().(*value.ObjectString)
+
+	var buffer bytes.Buffer
+	buffer.WriteString(aStr.GetString())
+	buffer.WriteString(bStr.GetString())
+	v.Push(value.NewObjectValueString(buffer.String()))
 }
