@@ -82,7 +82,7 @@ func (v *VM) concatenate()  {
 	aStr := v.Pop().Val.GetObject().(*value.ObjectString)
 
 	var buffer bytes.Buffer
-	buffer.WriteString(aStr.GetString())
-	buffer.WriteString(bStr.GetString())
+	buffer.WriteString(aStr.String())
+	buffer.WriteString(bStr.String())
 	v.Push(value.NewObjectValueString(buffer.String()))
 }

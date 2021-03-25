@@ -19,6 +19,8 @@ type VM struct {
 
 	stack [StackMax]*value.Value
 
+	globals map[string]*value.Value
+
 	// Stack pointer pointing at the array element just past the element
 	// containing the top value on the stack.
 	// Always points just past the last item. Points to where the next value
@@ -28,10 +30,11 @@ type VM struct {
 
 func NewVM() *VM {
 	return &VM{
-		sp:    0,
-		stack: [StackMax]*value.Value{},
-		ip:    0,
-		chunk: nil,
+		sp:      0,
+		stack:   [StackMax]*value.Value{},
+		globals: make(map[string]*value.Value),
+		ip:      0,
+		chunk:   nil,
 	}
 }
 
@@ -51,7 +54,6 @@ func (v *VM) Run() vm.InterpretResult {
 		// The body of each case implements that opcode’s behavior.
 		switch instr {
 		case opcode.OpReturn:
-			v.Pop().Println()
 			return vm.InterpretOk
 		case opcode.OpConstant:
 			v.Push(v.readConstant())
@@ -75,12 +77,12 @@ func (v *VM) Run() vm.InterpretResult {
 			b := v.Peek(0)
 			a := v.Peek(1)
 
-			if a.IsObjType(value.ObjString) && b.IsObjType(value.ObjString){
+			if a.IsObjType(value.ObjString) && b.IsObjType(value.ObjString) {
 				v.concatenate()
-			} else if a.Is(value.ValNumber) && b.Is(value.ValNumber){
+			} else if a.Is(value.ValNumber) && b.Is(value.ValNumber) {
 				bVal := v.Pop().Val.GetNumber()
 				aVal := v.Pop().Val.GetNumber()
-				v.Push(value.NewValue(value.ValNumber, bVal + aVal))
+				v.Push(value.NewValue(value.ValNumber, bVal+aVal))
 			} else {
 				v.runtimeError("Operands must be two numbers or two strings.")
 				return vm.InterpretRuntimeError
@@ -103,6 +105,31 @@ func (v *VM) Run() vm.InterpretResult {
 		case opcode.OpEqual:
 			b, a := v.Pop(), v.Pop()
 			v.Push(value.NewValue(value.ValBool, v.valuesEqual(a, b)))
+		case opcode.OpPrint:
+			v.Pop().Println()
+		case opcode.OpPop:
+			v.Pop()
+		case opcode.OpDefineGlobal:
+			name := v.readConstant().Val.GetObject().(*value.ObjectString)
+			v.globals[name.String()] = v.Peek(0)
+			v.Pop()
+		case opcode.OpGetGlobal:
+			name := v.readConstant().Val.GetObject().(*value.ObjectString)
+			val, ok := v.globals[name.String()]
+			if !ok {
+				v.runtimeError("Undefined variable '%s'.", name)
+				return vm.InterpretRuntimeError
+			}
+			v.Push(val)
+		case opcode.OpSetGlobal:
+			name := v.readConstant().Val.GetObject().(*value.ObjectString)
+			if _, ok := v.globals[name.String()]; !ok {
+				delete(v.globals, name.String())
+				v.runtimeError("Undefined variable '%s'.", name)
+				return vm.InterpretRuntimeError
+			}
+
+			v.globals[name.String()] = v.Peek(0)
 		}
 	}
 }
@@ -133,5 +160,6 @@ func (v *VM) resetStack() {
 
 func (v *VM) Free() {
 	v.sp = 0
+	v.globals = nil
 	// TODO:
 }

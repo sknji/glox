@@ -57,6 +57,10 @@ func (tt TokenType) String() string {
 	return getTokenStr(tt)
 }
 
+func (tt TokenType) Is(tokenType TokenType) bool {
+	return tt == tokenType
+}
+
 type Token struct {
 	Type TokenType
 	Val  string

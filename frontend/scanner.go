@@ -1,5 +1,7 @@
 package frontend
 
+import "fmt"
+
 type Scanner struct {
 	start   int
 	current int
@@ -91,15 +93,12 @@ func (s *Scanner) scanToken() *Token {
 		} else {
 			return s.makeToken(">", TokenGreater)
 		}
-	case '\n':
-		s.line += 1
-		s.advance()
 	case '"':
 		return s.string()
 
 	}
 
-	return s.errorToken("Unexpected character.")
+	return s.errorToken("Unexpected character. %s", c)
 }
 
 func (s *Scanner) makeToken(val string, _type TokenType) *Token {
@@ -123,11 +122,11 @@ func (s *Scanner) match(expected byte) bool {
 	return true
 }
 
-func (s *Scanner) errorToken(message string) *Token {
+func (s *Scanner) errorToken(format string, bytes...byte) *Token {
 	return &Token{
 		Type: TokenError,
 		Line: s.line,
-		Val:  message,
+		Val:  fmt.Sprintf(format, bytes),
 	}
 }
 
@@ -160,6 +159,9 @@ func (s *Scanner) skipWhitespace() {
 		switch a {
 		case ' ', '\r', '\t':
 			s.advance()
+		case '\n':
+			s.line+=1
+			s.advance()
 		default:
 			return
 		}
@@ -175,7 +177,7 @@ func (s *Scanner) peek() (byte, bool) {
 }
 
 func (s *Scanner) peekNext() (byte, bool) {
-	if s.isAtEnd() {
+	if s.current+1 >= s.length {
 		return 0, false
 	}
 

@@ -35,8 +35,11 @@ func NewCompiler(source []byte) *Compiler {
 
 func (c *Compiler) Compile() (*chunk2.Chunk, bool) {
 	c.advance()
-	c.expression()
-	c.consume(TokenEof, "Expect end of expression.")
+
+	for ; !c.match(TokenEof); {
+		c.declaration()
+	}
+
 	c.chunk.EmitBytes(c.prevToken().Line, opcode.OpReturn)
 
 	if shared.DebugPrintCode && !c.parser.hadError {
@@ -46,6 +49,20 @@ func (c *Compiler) Compile() (*chunk2.Chunk, bool) {
 	return c.chunk, !c.parser.hadError
 }
 
+func (c *Compiler) match(tokenType TokenType) bool {
+	if !c.check(tokenType) {
+		return false
+	}
+
+	c.advance()
+
+	return true
+}
+
+func (c *Compiler) check(tokenType TokenType) bool {
+	return c.parser.current.Type.Is(tokenType)
+}
+
 func (c *Compiler) advance() {
 	c.setPrevToken(c.currToken())
 
@@ -53,7 +70,7 @@ func (c *Compiler) advance() {
 		c.setCurrToken(c.scanner.scanToken())
 		//fmt.Printf("advance - curr: %+v, prev: %+v\n",
 		//	c.currToken(), c.prevToken())
-		if c.parser.current.Type != TokenError {
+		if !c.parser.current.Type.Is(TokenError) {
 			break
 		}
 
@@ -78,7 +95,7 @@ func (c *Compiler) currToken() *Token {
 }
 
 func (c *Compiler) consume(tokType TokenType, msg string) {
-	if c.parser.current.Type == tokType {
+	if c.parser.current.Type.Is(tokType) {
 		c.advance()
 		return
 	}
@@ -102,9 +119,9 @@ func (c *Compiler) errorAt(token *Token, msg string) {
 
 	fmt.Printf("[line %d] Error", token.Line)
 
-	if token.Type == TokenEof {
+	if token.Type.Is(TokenEof) {
 		fmt.Printf(" at end")
-	} else if token.Type == TokenError {
+	} else if token.Type.Is(TokenError) {
 		// Do nothing
 	} else {
 		fmt.Printf(" at '%s'", token.Val)
@@ -122,4 +139,23 @@ func (c *Compiler) makeConstant(value *value.Value) uint8 {
 	}
 
 	return constant
+}
+
+func (c *Compiler) synchronize() {
+	c.parser.panicMode = false
+
+	for ; !c.parser.current.Type.Is(TokenEof); {
+		if c.parser.previous.Type.Is(TokenSemicolon) {
+			return
+		}
+
+		switch c.parser.current.Type {
+		case TokenClass, TokenFun, TokenVar,
+			TokenFor, TokenIf, TokenWhile, TokenPrint,
+			TokenReturn:
+			return
+		}
+
+		c.advance()
+	}
 }

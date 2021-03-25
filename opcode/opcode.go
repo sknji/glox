@@ -16,4 +16,9 @@ const (
 	OpEqual
 	OpGreater
 	OpLess
+	OpPop
+	OpPrint
+	OpDefineGlobal
+	OpGetGlobal
+	OpSetGlobal
 )

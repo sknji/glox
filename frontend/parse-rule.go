@@ -1,6 +1,6 @@
 package frontend
 
-type ParseFunc func()
+type ParseFunc func(canAssign bool)
 
 type ParseRule struct {
 	prefix     ParseFunc
@@ -29,7 +29,7 @@ func (c *Compiler) defineRules() {
 		TokenGreaterEqual: {nil, c.binary, precComparison},
 		TokenLess:         {nil, c.binary, precComparison},
 		TokenLessEqual:    {nil, c.binary, precComparison},
-		TokenIdentifier:   {nil, nil, precNone},
+		TokenIdentifier:   {c.variable, nil, precNone},
 		TokenString:       {c.string, nil, precNone},
 		TokenNumber:       {c.number, nil, precNone},
 		TokenAnd:          {nil, nil, precNone},

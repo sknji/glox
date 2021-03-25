@@ -8,10 +8,6 @@ func NewObjectString(str string) *ObjectString {
 	return &ObjectString{str: str}
 }
 
-func (os *ObjectString) GetString() string {
-	return os.str
-}
-
 func (os *ObjectString) Type() ObjType {
 	return ObjString
 }

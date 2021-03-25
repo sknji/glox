@@ -14,13 +14,12 @@ func NewValue(valueType ValueType, val interface{}) *Value {
 	return &Value{ValType: valueType, Val: NewConcreteValue(val)}
 }
 
-func NewObjectValue(objType ObjType, val Object) *Value {
+func NewObjectValue(val Object) *Value {
 	return NewValue(ValObj, val)
 }
 
 func NewObjectValueString(s string) *Value {
-	str := NewObjectString(s)
-	return NewObjectValue(ObjString, str)
+	return NewObjectValue(NewObjectString(s))
 }
 
 func (v *Value) IsObjType(t ObjType) bool {

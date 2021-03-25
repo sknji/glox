@@ -8,4 +8,5 @@ const (
 
 type Object interface {
 	Type() ObjType
+	String() string
 }

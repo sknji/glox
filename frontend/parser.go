@@ -17,15 +17,69 @@ func NewParser() *Parser {
 	return &Parser{}
 }
 
+func (c *Compiler) declaration() {
+	if c.match(TokenVar) {
+		c.varDeclaration()
+	} else {
+		c.statement()
+	}
+
+	if c.parser.panicMode {
+		c.synchronize()
+	}
+}
+
+func (c *Compiler) varDeclaration() {
+	global := c.parseVariable("Expect variable name")
+
+	if c.match(TokenEqual) {
+		c.expression()
+	} else {
+		c.emitBytes(opcode.OpNil)
+	}
+
+	c.consume(TokenSemicolon, "Expect ';' after variable declaration.")
+
+	c.defineVariable(global)
+}
+
+func (c *Compiler) statement() {
+	if c.match(TokenPrint) {
+		c.printStatement()
+	} else {
+		c.expressionStatement()
+	}
+}
+
+func (c *Compiler) expressionStatement() {
+	c.expression()
+	c.consume(TokenSemicolon, "Expect ';' after expression.")
+	c.emitBytes(opcode.OpPop)
+}
+
 func (c *Compiler) expression() {
 	c.parsePrecedence(precAssignment)
 }
 
-func (c *Compiler) string() {
+func (c *Compiler) string(canAssign bool) {
 	c.emitConstant(value.NewObjectValueString(c.parser.previous.Val))
 }
 
-func (c *Compiler) number() {
+func (c *Compiler) variable(canAssign bool) {
+	c.namedVariable(c.parser.previous, canAssign)
+}
+
+func (c *Compiler) namedVariable(tok *Token, canAssign bool) {
+	arg := c.identifierConstant(tok)
+	if canAssign && c.match(TokenEqual) {
+		c.expression()
+		c.emitBytes(opcode.OpSetGlobal, arg)
+	} else {
+		c.emitBytes(opcode.OpGetGlobal, arg)
+	}
+}
+
+func (c *Compiler) number(canAssign bool) {
 	n, err := strconv.ParseFloat(c.parser.previous.Val, 64)
 	if err != nil {
 		c.error("Invalid number: " + err.Error())
@@ -34,12 +88,12 @@ func (c *Compiler) number() {
 	c.emitConstant(value.NewValue(value.ValNumber, n))
 }
 
-func (c *Compiler) grouping() {
+func (c *Compiler) grouping(canAssign bool) {
 	c.expression()
 	c.consume(TokenRightParen, "Expect ')' after expression.")
 }
 
-func (c *Compiler) unary() {
+func (c *Compiler) unary(canAssign bool) {
 	tokType := c.parser.previous.Type
 
 	c.parsePrecedence(precUnary)
@@ -54,7 +108,7 @@ func (c *Compiler) unary() {
 	}
 }
 
-func (c *Compiler) binary() {
+func (c *Compiler) binary(canAssign bool) {
 	tokType := c.parser.previous.Type
 
 	rule := c.getRule(tokType)
@@ -86,7 +140,7 @@ func (c *Compiler) binary() {
 	}
 }
 
-func (c *Compiler) literal() {
+func (c *Compiler) literal(canAssign bool) {
 	tok := c.prevToken()
 	switch tok.Type {
 	case TokenFalse:
@@ -98,6 +152,12 @@ func (c *Compiler) literal() {
 	}
 }
 
+func (c *Compiler) printStatement() {
+	c.expression()
+	c.consume(TokenSemicolon, "Expect ';' after value.")
+	c.emitBytes(opcode.OpPrint)
+}
+
 func (c *Compiler) parsePrecedence(precedence Precedence) {
 	c.advance()
 	//fmt.Printf("parsePrecedence - %+v\n",c.prevToken())
@@ -107,13 +167,31 @@ func (c *Compiler) parsePrecedence(precedence Precedence) {
 		return
 	}
 
-	prefix()
+	canAssign := precedence <= precAssignment
+	prefix(canAssign)
 
 	//fmt.Printf("parsePrecedence infix - %+v\n",c.currToken())
 	for precedence <= c.getRule(c.currToken().Type).precedence {
 		c.advance()
 		//fmt.Printf("parsePrecedence infix ok - %+v\n",c.prevToken())
 		infix := c.getRule(c.prevToken().Type).infix
-		infix()
+		infix(canAssign)
 	}
+
+	if canAssign && c.match(TokenEqual) {
+		c.error("Invalid assignment target.")
+	}
+}
+
+func (c *Compiler) parseVariable(errMsg string) uint8 {
+	c.consume(TokenIdentifier, errMsg)
+	return c.identifierConstant(c.parser.previous)
+}
+
+func (c *Compiler) identifierConstant(tok *Token) uint8 {
+	return c.makeConstant(value.NewObjectValueString(tok.Val))
+}
+
+func (c *Compiler) defineVariable(global uint8)  {
+	c.emitBytes(opcode.OpDefineGlobal, global)
 }
