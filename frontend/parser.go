@@ -46,6 +46,10 @@ func (c *Compiler) varDeclaration() {
 func (c *Compiler) statement() {
 	if c.match(TokenPrint) {
 		c.printStatement()
+	} else if c.match(TokenLeftBrace) {
+		c.beginScope()
+		c.block()
+		c.endScope()
 	} else {
 		c.expressionStatement()
 	}
@@ -61,6 +65,31 @@ func (c *Compiler) expression() {
 	c.parsePrecedence(precAssignment)
 }
 
+func (c *Compiler) beginScope() {
+	c.scope.scopeDepth += 1
+}
+
+func (c *Compiler) block() {
+	for ; !c.check(TokenRightBrace) && !c.check(TokenEof); {
+		c.declaration()
+	}
+
+	c.consume(TokenRightBrace, "Expect '}' after block.")
+}
+
+func (c *Compiler) endScope() {
+	var popCount uint8 = 0
+	for ; c.scope.localCount > 0 &&
+		c.scope.locals[c.scope.localCount-1].depth > c.scope.scopeDepth; {
+		popCount += 1
+		c.scope.localCount -= 1
+	}
+
+	c.emitBytes(opcode.OpPopN, popCount)
+
+	c.scope.scopeDepth -= 1
+}
+
 func (c *Compiler) string(canAssign bool) {
 	c.emitConstant(value.NewObjectValueString(c.parser.previous.Val))
 }
@@ -70,12 +99,23 @@ func (c *Compiler) variable(canAssign bool) {
 }
 
 func (c *Compiler) namedVariable(tok *Token, canAssign bool) {
-	arg := c.identifierConstant(tok)
+	var getOp, setOp uint8
+
+	arg, ok := c.resolveLocal(tok)
+	if ok {
+		getOp = opcode.OpGetLocal
+		setOp = opcode.OpSetLocal
+	} else {
+		arg = c.identifierConstant(tok)
+		getOp = opcode.OpGetGlobal
+		setOp = opcode.OpSetGlobal
+	}
+
 	if canAssign && c.match(TokenEqual) {
 		c.expression()
-		c.emitBytes(opcode.OpSetGlobal, arg)
+		c.emitBytes(setOp, uint8(arg))
 	} else {
-		c.emitBytes(opcode.OpGetGlobal, arg)
+		c.emitBytes(getOp, uint8(arg))
 	}
 }
 
@@ -185,13 +225,67 @@ func (c *Compiler) parsePrecedence(precedence Precedence) {
 
 func (c *Compiler) parseVariable(errMsg string) uint8 {
 	c.consume(TokenIdentifier, errMsg)
+
+	c.declareVariable()
+
+	if c.scope.scopeDepth > 0 {
+		return 0
+	}
+
 	return c.identifierConstant(c.parser.previous)
+}
+
+func (c *Compiler) identifiersEqual(a, b *Token) bool {
+	return a.Val == b.Val
+}
+
+func (c *Compiler) resolveLocal(tok *Token) (uint8, bool) {
+	for i := c.scope.localCount - 1; i >= 0; i++ {
+		local := c.scope.locals[i]
+		if c.identifiersEqual(tok, local.token) {
+			return uint8(i), true
+		}
+	}
+
+	return 0, false
 }
 
 func (c *Compiler) identifierConstant(tok *Token) uint8 {
 	return c.makeConstant(value.NewObjectValueString(tok.Val))
 }
 
-func (c *Compiler) defineVariable(global uint8)  {
+func (c *Compiler) addLocal(tok *Token) {
+	err := c.scope.addLocal(tok)
+	if err != nil {
+		c.error(err.Error())
+	}
+}
+
+func (c *Compiler) declareVariable() {
+	if c.scope.scopeDepth == 0 {
+		return
+	}
+
+	tok := c.parser.previous
+
+	for i := c.scope.localCount - 1; i >= 0; i-- {
+		local := c.scope.locals[i]
+		if local.depth != -1 && local.depth < c.scope.scopeDepth {
+			break
+		}
+
+		if c.identifiersEqual(tok, local.token) {
+			c.error("Already variable with this name in this scope.")
+		}
+	}
+
+	c.addLocal(tok)
+}
+
+func (c *Compiler) defineVariable(global uint8) {
+	if c.scope.scopeDepth > 0 {
+		return
+	}
+
 	c.emitBytes(opcode.OpDefineGlobal, global)
 }

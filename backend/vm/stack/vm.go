@@ -109,6 +109,8 @@ func (v *VM) Run() vm.InterpretResult {
 			v.Pop().Println()
 		case opcode.OpPop:
 			v.Pop()
+		case opcode.OpPopN:
+			v.PopN(int(v.readByte()))
 		case opcode.OpDefineGlobal:
 			name := v.readConstant().Val.GetObject().(*value.ObjectString)
 			v.globals[name.String()] = v.Peek(0)
@@ -130,6 +132,11 @@ func (v *VM) Run() vm.InterpretResult {
 			}
 
 			v.globals[name.String()] = v.Peek(0)
+		case opcode.OpSetLocal:
+			v.stack[v.readByte()] = v.Peek(0)
+		case opcode.OpGetLocal:
+			v.Push(v.stack[v.readByte()])
+
 		}
 	}
 }
@@ -145,9 +152,13 @@ func (v *VM) Push(val *value.Value) {
 	v.sp += 1
 }
 
-func (v *VM) Pop() *value.Value {
-	v.sp -= 1
+func (v *VM) PopN(n int) *value.Value {
+	v.sp -= n
 	return v.stack[v.sp]
+}
+
+func (v *VM) Pop() *value.Value {
+	return v.PopN(1)
 }
 
 func (v *VM) Peek(distance int) *value.Value {

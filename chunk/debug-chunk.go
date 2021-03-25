@@ -63,6 +63,10 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return c.ConstantInstruction("OP_GET_GLOBAL", offset)
 	case opcode.OpSetGlobal:
 		return c.ConstantInstruction("OP_SET_GLOBAL", offset)
+	case opcode.OpGetLocal:
+		return c.ByteInstruction("OP_GET_LOCAL", offset)
+	case opcode.OpSetLocal:
+		return c.ByteInstruction("OP_SET_LOCAL", offset)
 	default:
 		fmt.Printf("Unknown opcode %d\n", instr)
 		return offset + 1
@@ -79,5 +83,11 @@ func (c *Chunk) ConstantInstruction(name string, offset int) int {
 
 	fmt.Printf("%-16s %4d '", name, constant)
 	c.Constants.Values[constant].Println()
+	return offset + 2
+}
+
+func (c *Chunk) ByteInstruction(name string, offset int) int {
+	slot := c.Code[offset+1]
+	fmt.Printf("%-16s %4d\n", name, slot)
 	return offset + 2
 }

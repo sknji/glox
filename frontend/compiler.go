@@ -2,7 +2,7 @@ package frontend
 
 import (
 	"fmt"
-	chunk2 "github.com/urijn/glox/chunk"
+	"github.com/urijn/glox/chunk"
 	"github.com/urijn/glox/opcode"
 	"github.com/urijn/glox/shared"
 	"github.com/urijn/glox/value"
@@ -18,14 +18,16 @@ type Compiler struct {
 	parser     *Parser
 	parseRules map[TokenType]*ParseRule
 	scanner    *Scanner
-	chunk      *chunk2.Chunk
+	chunk      *chunk.Chunk
+	scope      *CompilerScope
 }
 
 func NewCompiler(source []byte) *Compiler {
 	compiler := &Compiler{
 		scanner: NewScanner(source),
 		parser:  NewParser(),
-		chunk:   chunk2.NewChunk(),
+		chunk:   chunk.NewChunk(),
+		scope:   NewCompilerScope(),
 	}
 
 	compiler.defineRules()
@@ -33,7 +35,7 @@ func NewCompiler(source []byte) *Compiler {
 	return compiler
 }
 
-func (c *Compiler) Compile() (*chunk2.Chunk, bool) {
+func (c *Compiler) Compile() (*chunk.Chunk, bool) {
 	c.advance()
 
 	for ; !c.match(TokenEof); {

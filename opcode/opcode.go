@@ -17,8 +17,11 @@ const (
 	OpGreater
 	OpLess
 	OpPop
+	OpPopN
 	OpPrint
 	OpDefineGlobal
 	OpGetGlobal
 	OpSetGlobal
+	OpGetLocal
+	OpSetLocal
 )
