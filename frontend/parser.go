@@ -113,9 +113,9 @@ func (c *Compiler) namedVariable(tok *Token, canAssign bool) {
 
 	if canAssign && c.match(TokenEqual) {
 		c.expression()
-		c.emitBytes(setOp, uint8(arg))
+		c.emitBytes(setOp, arg)
 	} else {
-		c.emitBytes(getOp, uint8(arg))
+		c.emitBytes(getOp, arg)
 	}
 }
 
@@ -240,9 +240,12 @@ func (c *Compiler) identifiersEqual(a, b *Token) bool {
 }
 
 func (c *Compiler) resolveLocal(tok *Token) (uint8, bool) {
-	for i := c.scope.localCount - 1; i >= 0; i++ {
+	for i := c.scope.localCount - 1; i >= 0; i-- {
 		local := c.scope.locals[i]
-		if c.identifiersEqual(tok, local.token) {
+		if local != nil && c.identifiersEqual(tok, local.token) {
+			if local.depth == -1 {
+				c.error("Can't read local variable in its own initializer.")
+			}
 			return uint8(i), true
 		}
 	}
@@ -284,8 +287,13 @@ func (c *Compiler) declareVariable() {
 
 func (c *Compiler) defineVariable(global uint8) {
 	if c.scope.scopeDepth > 0 {
+		c.markInitialized()
 		return
 	}
 
 	c.emitBytes(opcode.OpDefineGlobal, global)
+}
+
+func (c *Compiler) markInitialized() {
+	c.scope.locals[c.scope.localCount-1].depth = c.scope.scopeDepth
 }

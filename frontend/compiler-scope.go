@@ -34,7 +34,7 @@ func (cs *CompilerScope) addLocal(tok *Token) error {
 	}
 	local := &Local{
 		token: tok,
-		depth: cs.scopeDepth,
+		depth: -1,
 	}
 	cs.locals[cs.localCount] = local
 	cs.localCount += 1
