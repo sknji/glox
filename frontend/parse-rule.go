@@ -40,7 +40,7 @@ func (c *Compiler) defineRules() {
 		TokenFun:          {nil, nil, precNone},
 		TokenIf:           {nil, nil, precNone},
 		TokenNil:          {c.literal, nil, precNone},
-		TokenOr:           {nil, nil, precNone},
+		TokenOr:           {nil, c.or_, precOr},
 		TokenPrint:        {nil, nil, precNone},
 		TokenReturn:       {nil, nil, precNone},
 		TokenSuper:        {nil, nil, precNone},

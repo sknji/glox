@@ -154,6 +154,17 @@ func (c *Compiler) number(bool) {
 	c.emitConstant(value.NewValue(value.ValNumber, n))
 }
 
+func (c *Compiler) or_(bool) {
+	elseJump := c.emitJump(opcode.OpJumpIfFalse)
+	endJump := c.emitJump(opcode.OpJump)
+
+	c.patchJump(elseJump)
+	c.emitBytes(opcode.OpPop)
+
+	c.parsePrecedence(precOr)
+	c.patchJump(endJump)
+}
+
 func (c *Compiler) grouping(bool) {
 	c.expression()
 	c.consume(TokenRightParen, "Expect ')' after expression.")
