@@ -136,7 +136,14 @@ func (v *VM) Run() vm.InterpretResult {
 			v.stack[v.readByte()] = v.Peek(0)
 		case opcode.OpGetLocal:
 			v.Push(v.stack[v.readByte()])
-
+		case opcode.OpJumpIfFalse:
+			offset := v.readShort()
+			if v.isFalsey(v.Peek(0)) {
+				v.ip += int(offset)
+			}
+		case opcode.OpJump:
+			offset := v.readShort()
+			v.ip += int(offset)
 		}
 	}
 }

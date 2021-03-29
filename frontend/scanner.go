@@ -60,13 +60,7 @@ func (s *Scanner) scanToken() *Token {
 	case '+':
 		return s.makeToken("+", TokenPlus)
 	case '/':
-		if a, ok := s.peekNext(); ok && a == '/' {
-			s.advanceCond(func(b byte) bool {
-				return b != '\n'
-			})
-		} else {
-			return s.makeToken("/", TokenSlash)
-		}
+		return s.makeToken("/", TokenSlash)
 	case '*':
 		return s.makeToken("*", TokenStar)
 	case '!':
@@ -122,7 +116,7 @@ func (s *Scanner) match(expected byte) bool {
 	return true
 }
 
-func (s *Scanner) errorToken(format string, bytes...byte) *Token {
+func (s *Scanner) errorToken(format string, bytes ...byte) *Token {
 	return &Token{
 		Type: TokenError,
 		Line: s.line,
@@ -160,8 +154,15 @@ func (s *Scanner) skipWhitespace() {
 		case ' ', '\r', '\t':
 			s.advance()
 		case '\n':
-			s.line+=1
+			s.line += 1
 			s.advance()
+		case '/':
+			if a, ok := s.peekNext(); ok && a == '/' {
+				s.advanceCond(func(b byte) bool {
+					fmt.Printf("Comment consume: '%c'\n", b)
+					return b != '\n'
+				})
+			}
 		default:
 			return
 		}

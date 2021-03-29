@@ -46,6 +46,10 @@ func (c *Compiler) varDeclaration() {
 func (c *Compiler) statement() {
 	if c.match(TokenPrint) {
 		c.printStatement()
+	} else if c.match(TokenIf) {
+		c.ifStatement()
+	} else if c.match(TokenWhile) {
+		c.whileStatement()
 	} else if c.match(TokenLeftBrace) {
 		c.beginScope()
 		c.block()
@@ -59,6 +63,28 @@ func (c *Compiler) expressionStatement() {
 	c.expression()
 	c.consume(TokenSemicolon, "Expect ';' after expression.")
 	c.emitBytes(opcode.OpPop)
+}
+
+func (c *Compiler) ifStatement() {
+	c.consume(TokenLeftParen, "Expect '(' after 'if'.")
+	c.expression()
+	c.consume(TokenRightParen, "Expect ')' after condition.")
+
+	thenJump := c.emitJump(opcode.OpJumpIfFalse)
+	c.emitBytes(opcode.OpPop)
+
+	c.statement()
+
+	elseJump := c.emitJump(opcode.OpJump)
+	c.emitBytes(opcode.OpPop)
+
+	c.patchJump(thenJump)
+
+	if c.match(TokenElse) {
+		c.statement()
+	}
+
+	c.patchJump(elseJump)
 }
 
 func (c *Compiler) expression() {
@@ -90,7 +116,7 @@ func (c *Compiler) endScope() {
 	c.scope.scopeDepth -= 1
 }
 
-func (c *Compiler) string(canAssign bool) {
+func (c *Compiler) string(bool) {
 	c.emitConstant(value.NewObjectValueString(c.parser.previous.Val))
 }
 
@@ -119,7 +145,7 @@ func (c *Compiler) namedVariable(tok *Token, canAssign bool) {
 	}
 }
 
-func (c *Compiler) number(canAssign bool) {
+func (c *Compiler) number(bool) {
 	n, err := strconv.ParseFloat(c.parser.previous.Val, 64)
 	if err != nil {
 		c.error("Invalid number: " + err.Error())
@@ -128,12 +154,12 @@ func (c *Compiler) number(canAssign bool) {
 	c.emitConstant(value.NewValue(value.ValNumber, n))
 }
 
-func (c *Compiler) grouping(canAssign bool) {
+func (c *Compiler) grouping(bool) {
 	c.expression()
 	c.consume(TokenRightParen, "Expect ')' after expression.")
 }
 
-func (c *Compiler) unary(canAssign bool) {
+func (c *Compiler) unary(bool) {
 	tokType := c.parser.previous.Type
 
 	c.parsePrecedence(precUnary)
@@ -148,7 +174,7 @@ func (c *Compiler) unary(canAssign bool) {
 	}
 }
 
-func (c *Compiler) binary(canAssign bool) {
+func (c *Compiler) binary(bool) {
 	tokType := c.parser.previous.Type
 
 	rule := c.getRule(tokType)
@@ -180,7 +206,7 @@ func (c *Compiler) binary(canAssign bool) {
 	}
 }
 
-func (c *Compiler) literal(canAssign bool) {
+func (c *Compiler) literal(bool) {
 	tok := c.prevToken()
 	switch tok.Type {
 	case TokenFalse:
@@ -196,6 +222,10 @@ func (c *Compiler) printStatement() {
 	c.expression()
 	c.consume(TokenSemicolon, "Expect ';' after value.")
 	c.emitBytes(opcode.OpPrint)
+}
+
+func (c *Compiler) whileStatement() {
+
 }
 
 func (c *Compiler) parsePrecedence(precedence Precedence) {

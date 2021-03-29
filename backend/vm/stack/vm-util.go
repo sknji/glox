@@ -7,13 +7,18 @@ import (
 	"github.com/urijn/glox/value"
 )
 
-func (v *VM) incrementIP() {
-	v.ip += 1
+func (v *VM) incrementIP(count int) {
+	v.ip += count
 }
 
 func (v *VM) readByte() byte {
-	defer v.incrementIP()
-	return v.chunk.Code[v.ip]
+	v.incrementIP(1)
+	return v.chunk.Code[v.ip-1]
+}
+
+func (v *VM) readShort() uint16 {
+	v.incrementIP(2)
+	return uint16(v.chunk.Code[v.ip-2])<<8 | uint16(v.chunk.Code[v.ip-1])
 }
 
 func (v *VM) readConstant() *value.Value {
@@ -77,7 +82,7 @@ func (v *VM) valuesEqual(a, b *value.Value) bool {
 	}
 }
 
-func (v *VM) concatenate()  {
+func (v *VM) concatenate() {
 	bStr := (v.Pop().Val.GetObject()).(*value.ObjectString)
 	aStr := v.Pop().Val.GetObject().(*value.ObjectString)
 
