@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"fmt"
 	"github.com/urijn/glox/opcode"
 	"github.com/urijn/glox/value"
 	"math"
@@ -28,7 +27,6 @@ func (c *Compiler) patchJump(offset int) {
 		c.error("Too much code to jump over.")
 	}
 
-	fmt.Printf("Jump: %d, offset: %d, current:%d\n", jump, offset, c.chunk.Count)
 	c.chunk.Code[offset] = byte((jump >> 8) & 0xff)
 	c.chunk.Code[offset+1] = byte(jump & 0xff)
 }

@@ -38,7 +38,7 @@ func NewCompiler(source []byte) *Compiler {
 func (c *Compiler) Compile() (*chunk.Chunk, bool) {
 	c.advance()
 
-	for ; !c.match(TokenEof); {
+	for !c.match(TokenEof) {
 		c.declaration()
 	}
 
@@ -146,7 +146,7 @@ func (c *Compiler) makeConstant(value *value.Value) uint8 {
 func (c *Compiler) synchronize() {
 	c.parser.panicMode = false
 
-	for ; !c.parser.current.Type.Is(TokenEof); {
+	for !c.parser.current.Type.Is(TokenEof) {
 		if c.parser.previous.Type.Is(TokenSemicolon) {
 			return
 		}

@@ -46,6 +46,8 @@ func (c *Compiler) varDeclaration() {
 func (c *Compiler) statement() {
 	if c.match(TokenPrint) {
 		c.printStatement()
+	} else if c.match(TokenFor) {
+		c.forStatement()
 	} else if c.match(TokenIf) {
 		c.ifStatement()
 	} else if c.match(TokenWhile) {
@@ -63,6 +65,55 @@ func (c *Compiler) expressionStatement() {
 	c.expression()
 	c.consume(TokenSemicolon, "Expect ';' after expression.")
 	c.emitBytes(opcode.OpPop)
+}
+
+func (c *Compiler) forStatement() {
+	c.beginScope()
+	c.consume(TokenLeftParen, "Expect '(' after 'for'.")
+	if c.match(TokenSemicolon) {
+		// No initializer
+	} else if c.match(TokenVar) {
+		c.varDeclaration()
+	} else {
+		c.expressionStatement()
+	}
+
+	loopStart := c.chunk.Count
+
+	exitJump := -1
+	if !c.match(TokenSemicolon) {
+		c.expression()
+		c.consume(TokenSemicolon, "Expect ';' after loop condition.")
+
+		// Jump out of the loop if the condition is false.
+		exitJump = c.emitJump(opcode.OpJumpIfFalse)
+		c.emitBytes(opcode.OpPop) // Condition.
+	}
+
+	if !c.match(TokenRightParen) {
+		bodyJump := c.emitJump(opcode.OpJump)
+
+		incrementStart := c.chunk.Count
+
+		c.expression()
+		c.emitBytes(opcode.OpPop)
+		c.consume(TokenRightParen, "Expect ')' after for clauses.")
+
+		c.emitLoop(loopStart)
+		loopStart = incrementStart
+		c.patchJump(bodyJump)
+	}
+
+	c.statement()
+
+	c.emitLoop(loopStart)
+
+	if exitJump != -1 {
+		c.patchJump(exitJump)
+		c.emitBytes(opcode.OpPop)
+	}
+
+	c.endScope()
 }
 
 func (c *Compiler) ifStatement() {
@@ -96,7 +147,7 @@ func (c *Compiler) beginScope() {
 }
 
 func (c *Compiler) block() {
-	for ; !c.check(TokenRightBrace) && !c.check(TokenEof); {
+	for !c.check(TokenRightBrace) && !c.check(TokenEof) {
 		c.declaration()
 	}
 
@@ -105,8 +156,8 @@ func (c *Compiler) block() {
 
 func (c *Compiler) endScope() {
 	var popCount uint8 = 0
-	for ; c.scope.localCount > 0 &&
-		c.scope.locals[c.scope.localCount-1].depth > c.scope.scopeDepth; {
+	for c.scope.localCount > 0 &&
+		c.scope.locals[c.scope.localCount-1].depth > c.scope.scopeDepth {
 		popCount += 1
 		c.scope.localCount -= 1
 	}

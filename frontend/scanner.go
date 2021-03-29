@@ -159,7 +159,6 @@ func (s *Scanner) skipWhitespace() {
 		case '/':
 			if a, ok := s.peekNext(); ok && a == '/' {
 				s.advanceCond(func(b byte) bool {
-					fmt.Printf("Comment consume: '%c'\n", b)
 					return b != '\n'
 				})
 			}

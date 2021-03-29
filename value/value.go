@@ -23,11 +23,11 @@ func NewObjectValueString(s string) *Value {
 }
 
 func (v *Value) IsObjType(t ObjType) bool {
-	return v.Is(ValObj) && v.Val.GetObject().Type() == t
+	return v != nil && v.Is(ValObj) && v.Val.GetObject().Type() == t
 }
 
 func (v *Value) Is(t ValueType) bool {
-	return v.ValType == t
+	return v !=nil && v.ValType == t
 }
 
 func (v *Value) String() string {

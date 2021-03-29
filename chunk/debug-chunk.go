@@ -55,6 +55,8 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return c.SimpleInstruction("OP_LESS", offset)
 	case opcode.OpPop:
 		return c.SimpleInstruction("OP_POP", offset)
+	case opcode.OpPopN:
+		return c.ByteInstruction("OP_POP_N", offset)
 	case opcode.OpPrint:
 		return c.SimpleInstruction("OP_PRINT", offset)
 	case opcode.OpDefineGlobal:
@@ -73,10 +75,8 @@ func (c *Chunk) DisassembleInstruction(offset int) int {
 		return c.jumpInstruction("OP_JUMP_IF_FALSE", 1, offset)
 	case opcode.OpLoop:
 		return c.jumpInstruction("OP_LOOP", -1, offset)
-
-
 	default:
-		fmt.Printf("Unknown opcode %d\n", instr)
+		fmt.Printf("Unknown opcode %s\n", opcode.OpCodeToString(instr))
 		return offset + 1
 	}
 }
