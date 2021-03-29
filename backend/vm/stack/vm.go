@@ -144,6 +144,9 @@ func (v *VM) Run() vm.InterpretResult {
 		case opcode.OpJump:
 			offset := v.readShort()
 			v.ip += int(offset)
+		case opcode.OpLoop:
+			offset := v.readShort()
+			v.ip -= int(offset)
 		}
 	}
 }

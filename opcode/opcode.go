@@ -26,4 +26,5 @@ const (
 	OpSetLocal
 	OpJumpIfFalse
 	OpJump
+	OpLoop
 )

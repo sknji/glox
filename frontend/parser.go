@@ -236,7 +236,21 @@ func (c *Compiler) printStatement() {
 }
 
 func (c *Compiler) whileStatement() {
+	loopStart := c.chunk.Count
 
+	c.consume(TokenLeftParen, "Expect '(' after 'while'.")
+	c.expression()
+	c.consume(TokenRightParen, "Expect ')' after condition.")
+
+	exitJump := c.emitJump(opcode.OpJumpIfFalse)
+
+	c.emitBytes(opcode.OpPop)
+	c.statement()
+
+	c.emitLoop(loopStart)
+
+	c.patchJump(exitJump)
+	c.emitBytes(opcode.OpPop)
 }
 
 func (c *Compiler) parsePrecedence(precedence Precedence) {

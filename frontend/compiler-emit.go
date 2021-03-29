@@ -30,5 +30,16 @@ func (c *Compiler) patchJump(offset int) {
 
 	fmt.Printf("Jump: %d, offset: %d, current:%d\n", jump, offset, c.chunk.Count)
 	c.chunk.Code[offset] = byte((jump >> 8) & 0xff)
-	c.chunk.Code[offset + 1] = byte(jump & 0xff)
+	c.chunk.Code[offset+1] = byte(jump & 0xff)
+}
+
+func (c *Compiler) emitLoop(loopStart int) {
+	c.emitBytes(opcode.OpLoop)
+
+	offset := c.chunk.Count - loopStart + 2
+	if offset > math.MaxUint16 {
+		c.error("Loop body too large.")
+	}
+
+	c.emitBytes(byte(offset>>8&0xff), byte(offset&0xff))
 }
