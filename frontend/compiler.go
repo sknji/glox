@@ -9,6 +9,24 @@ import (
 	"math"
 )
 
+var gCompiler = NewGlobalCompiler()
+
+type GlobalCompiler struct {
+	current *Compiler
+}
+
+func setCurrentCompiler(curr *Compiler) {
+	gCompiler.current = curr
+}
+
+func currCompiler() *Compiler {
+	return gCompiler.current
+}
+
+func NewGlobalCompiler() *GlobalCompiler {
+	return &GlobalCompiler{}
+}
+
 // A compiler has roughly two jobs. It parses the user’s source code to understand
 // what it means. Then it takes that knowledge and outputs low-level instructions
 // that produce the same semantics. Many languages split those two roles into two
@@ -18,37 +36,52 @@ type Compiler struct {
 	parser     *Parser
 	parseRules map[TokenType]*ParseRule
 	scanner    *Scanner
-	chunk      *chunk.Chunk
 	scope      *CompilerScope
+
+	function *ObjectFunction
+	typ      FunctionType
 }
 
 func NewCompiler(source []byte) *Compiler {
 	compiler := &Compiler{
-		scanner: NewScanner(source),
-		parser:  NewParser(),
-		chunk:   chunk.NewChunk(),
-		scope:   NewCompilerScope(),
+		scanner:  NewScanner(source),
+		parser:   NewParser(),
+		scope:    NewCompilerScope(),
+		function: NewObjectFunction(TypeScript),
 	}
 
 	compiler.defineRules()
 
+	setCurrentCompiler(compiler)
+
+	local := currCompiler().scope.locals[currCompiler().scope.localCount]
+	currCompiler().scope.localCount += 1
+	local.depth = 0
+	local.token = nil
+
 	return compiler
 }
 
-func (c *Compiler) Compile() (*chunk.Chunk, bool) {
+func (c *Compiler) currChunk() *chunk.Chunk {
+	return c.function.chunk
+}
+
+func (c *Compiler) Compile() (*ObjectFunction, bool) {
 	c.advance()
 
 	for !c.match(TokenEof) {
 		c.declaration()
 	}
 
-	c.chunk.EmitBytes(c.prevToken().Line, opcode.OpReturn)
+	c.currChunk().EmitBytes(c.prevToken().Line, opcode.OpReturn)
 
 	if shared.DebugPrintCode && !c.parser.hadError {
-		c.chunk.Disassemble("code")
+
+
+		c.currChunk().Disassemble(currCompiler().function.ParsedName())
 	}
 
-	return c.chunk, !c.parser.hadError
+	return currCompiler().function, !c.parser.hadError
 }
 
 func (c *Compiler) match(tokenType TokenType) bool {
@@ -134,7 +167,7 @@ func (c *Compiler) errorAt(token *Token, msg string) {
 }
 
 func (c *Compiler) makeConstant(value *value.Value) uint8 {
-	constant := c.chunk.AddConstant(value)
+	constant := c.currChunk().AddConstant(value)
 	if constant > math.MaxUint8 {
 		c.error("Too many constants in one chunk.")
 		return 0

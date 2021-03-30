@@ -7,12 +7,12 @@ import (
 )
 
 func (c *Compiler) emitBytes(op ...byte) {
-	c.chunk.EmitBytes(c.prevToken().Line, op...)
+	c.currChunk().EmitBytes(c.prevToken().Line, op...)
 }
 
 func (c *Compiler) emitJump(op byte) int {
 	c.emitBytes(op, 0xff, 0xff)
-	return c.chunk.Count - 2
+	return c.currChunk().Count - 2
 }
 
 func (c *Compiler) emitConstant(value *value.Value) {
@@ -21,20 +21,20 @@ func (c *Compiler) emitConstant(value *value.Value) {
 
 func (c *Compiler) patchJump(offset int) {
 	// -2 to adjust for the bytecode for the jump offset itself.
-	jump := c.chunk.Count - offset - 2
+	jump := c.currChunk().Count - offset - 2
 
 	if jump > math.MaxUint16 {
 		c.error("Too much code to jump over.")
 	}
 
-	c.chunk.Code[offset] = byte((jump >> 8) & 0xff)
-	c.chunk.Code[offset+1] = byte(jump & 0xff)
+	c.currChunk().Code[offset] = byte((jump >> 8) & 0xff)
+	c.currChunk().Code[offset+1] = byte(jump & 0xff)
 }
 
 func (c *Compiler) emitLoop(loopStart int) {
 	c.emitBytes(opcode.OpLoop)
 
-	offset := c.chunk.Count - loopStart + 2
+	offset := c.currChunk().Count - loopStart + 2
 	if offset > math.MaxUint16 {
 		c.error("Loop body too large.")
 	}

@@ -3,26 +3,44 @@ package stack
 import (
 	"bytes"
 	"github.com/urijn/glox/backend/vm"
+	"github.com/urijn/glox/chunk"
 	"github.com/urijn/glox/opcode"
 	"github.com/urijn/glox/value"
 )
 
+func (v *VM) currFrame() *CallFrame {
+	return v.frames[v.frameCount-1]
+}
+
+func (v *VM) currFrameChunk() *chunk.Chunk {
+	return v.currFrame().function.Chunk()
+}
+
+func (v *VM) currFrameCode() []byte {
+	return v.currFrameChunk().Code
+}
+
+func (v *VM) currFrameIp() int {
+	return v.currFrame().ip
+}
+
 func (v *VM) incrementIP(count int) {
-	v.ip += count
+	v.currFrame().ip += count
 }
 
 func (v *VM) readByte() byte {
 	v.incrementIP(1)
-	return v.chunk.Code[v.ip-1]
+	return v.currFrameCode()[v.currFrameIp()-1]
 }
 
 func (v *VM) readShort() uint16 {
 	v.incrementIP(2)
-	return uint16(v.chunk.Code[v.ip-2])<<8 | uint16(v.chunk.Code[v.ip-1])
+	return uint16(v.currFrameCode()[v.currFrameIp()-2])<<8 |
+		uint16(v.currFrameCode()[v.currFrameIp()-1])
 }
 
 func (v *VM) readConstant() *value.Value {
-	return v.chunk.Constants.Values[v.readByte()]
+	return v.currFrameChunk().Constants.Values[v.readByte()]
 }
 
 func (v *VM) binaryOperation(valType value.ValueType, op byte) vm.InterpretResult {

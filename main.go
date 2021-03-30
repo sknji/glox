@@ -60,12 +60,12 @@ func run(v vm.VirtualMachine, source []byte) vm.InterpretResult {
 
 	compiler := frontend.NewCompiler(source)
 
-	chunk, ok := compiler.Compile()
+	function, ok := compiler.Compile()
 	if !ok {
 		return vm.InterpretCompileError
 	}
 
-	return v.Interpret(chunk)
+	return v.Interpret(function)
 }
 
 func main() {

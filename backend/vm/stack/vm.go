@@ -2,20 +2,28 @@ package stack
 
 import (
 	"github.com/urijn/glox/backend/vm"
-	"github.com/urijn/glox/chunk"
+	"github.com/urijn/glox/frontend"
 	"github.com/urijn/glox/opcode"
 	"github.com/urijn/glox/shared"
 	"github.com/urijn/glox/value"
+	"math"
 )
 
-const StackMax = 512
+const FramesMax = 64
+const StackMax = FramesMax * math.MaxUint8
 
-type VM struct {
-	chunk *chunk.Chunk
+type CallFrame struct {
+	function *frontend.ObjectFunction
 
 	// The IP always points to the next instruction, not the one
 	// currently being handled.
-	ip int
+	ip    int
+	slots []*value.Value
+}
+
+type VM struct {
+	frames     [FramesMax]*CallFrame
+	frameCount int
 
 	stack [StackMax]*value.Value
 
@@ -44,6 +52,8 @@ func (v *VM) Run() vm.InterpretResult {
 		if shared.DebugTraceExecution {
 			v.debug()
 		}
+
+		frame := v.currFrame()
 
 		// Given a numeric opcode, we need to get to the right code that implements
 		// that instruction's semantics. This process is called "decoding" or
@@ -133,25 +143,27 @@ func (v *VM) Run() vm.InterpretResult {
 
 			v.globals[name.String()] = v.Peek(0)
 		case opcode.OpSetLocal:
-			v.stack[v.readByte()] = v.Peek(0)
+			frame.slots[v.readByte()] = v.Peek(0)
 		case opcode.OpGetLocal:
-			v.Push(v.stack[v.readByte()])
+			v.Push(frame.slots[v.readByte()])
 		case opcode.OpJumpIfFalse:
 			offset := v.readShort()
 			if v.isFalsey(v.Peek(0)) {
-				v.ip += int(offset)
+				frame.ip += int(offset)
 			}
 		case opcode.OpJump:
 			offset := v.readShort()
-			v.ip += int(offset)
+			frame.ip += int(offset)
 		case opcode.OpLoop:
 			offset := v.readShort()
-			v.ip -= int(offset)
+			frame.ip -= int(offset)
 		}
 	}
 }
 
-func (v *VM) Interpret(chunk *chunk.Chunk) vm.InterpretResult {
+func (v *VM) Interpret(function *frontend.ObjectFunction) vm.InterpretResult {
+	v.Push(function)
+
 	v.chunk = chunk
 	v.ip = 0
 	return v.Run()
@@ -177,6 +189,7 @@ func (v *VM) Peek(distance int) *value.Value {
 
 func (v *VM) resetStack() {
 	v.sp = 0
+	v.frameCount = 0
 }
 
 func (v *VM) Free() {

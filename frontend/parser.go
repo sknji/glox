@@ -78,7 +78,7 @@ func (c *Compiler) forStatement() {
 		c.expressionStatement()
 	}
 
-	loopStart := c.chunk.Count
+	loopStart := c.currChunk().Count
 
 	exitJump := -1
 	if !c.match(TokenSemicolon) {
@@ -93,7 +93,7 @@ func (c *Compiler) forStatement() {
 	if !c.match(TokenRightParen) {
 		bodyJump := c.emitJump(opcode.OpJump)
 
-		incrementStart := c.chunk.Count
+		incrementStart := c.currChunk().Count
 
 		c.expression()
 		c.emitBytes(opcode.OpPop)
@@ -287,7 +287,7 @@ func (c *Compiler) printStatement() {
 }
 
 func (c *Compiler) whileStatement() {
-	loopStart := c.chunk.Count
+	loopStart := c.currChunk().Count
 
 	c.consume(TokenLeftParen, "Expect '(' after 'while'.")
 	c.expression()

@@ -16,5 +16,5 @@ func (v *VM) debug() {
 	}
 	fmt.Printf("\n")
 
-	v.chunk.DisassembleInstruction(v.ip)
+	v.currFrameChunk().DisassembleInstruction(v.currFrameIp())
 }

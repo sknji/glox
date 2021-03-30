@@ -1,6 +1,8 @@
 package vm
 
-import "github.com/urijn/glox/chunk"
+import (
+	"github.com/urijn/glox/frontend"
+)
 
 type InterpretResult int
 
@@ -16,6 +18,6 @@ func (ir *InterpretResult) IsSuccess() bool {
 
 type VirtualMachine interface {
 	Run() InterpretResult
-	Interpret(chunk *chunk.Chunk) InterpretResult
+	Interpret(function *frontend.ObjectFunction) InterpretResult
 	Free()
 }
